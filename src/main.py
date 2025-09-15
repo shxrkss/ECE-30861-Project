@@ -6,7 +6,7 @@ def main():
         print("Usage: python cli.py <absolute_path_to_url_file>", file=sys.stderr)
         sys.exit(1)
 
-    file_path = sys.argv[1]
+    file_path: str = sys.argv[1]
 
     try:
         model_info = read_url_file(file_path)
