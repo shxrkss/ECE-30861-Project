@@ -5,5 +5,5 @@ class LicenseMetric(MetricBase):
         super().__init__("license")
 
     def compute(self, url) -> float:
-        """Implement licnese check using llm"""
+        """Implement license check using llm"""
         raise NotImplementedError

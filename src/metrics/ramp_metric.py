@@ -64,7 +64,7 @@ class RampMetric(MetricBase):
 # Example code snippet that shows how to use the ramp-up metric
 # -------------------
 if __name__ == "__main__":
-    url = "https://huggingface.co/LLM360/K2-Think"
+    url = "https://huggingface.co/openai/whisper-tiny/tree/main"
     metric = RampMetric()
     ramp_score, latency = metric.compute(url)
 
