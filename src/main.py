@@ -11,8 +11,10 @@ def main():
     file_path: str = sys.argv[1]
 
     if file_path == "install":
-        # this should be where all dependencies are installed
-        sys.exit(0)
+        repo_root = Path(__file__).parent.parent.resolve()  # src/.. => project root
+        req_file = repo_root / "requirements.txt"
+        exit_code = install_requirements(req_file)
+        sys.exit(exit_code)
     elif file_path == "test":
         #run all our tests here 
         sys.exit(0)
