@@ -21,6 +21,10 @@ def main():
             print(f"Error installing dependencies: {e}", file=sys.stderr)
             sys.exit(1)
         sys.exit(0)
+        repo_root = Path(__file__).parent.parent.resolve()  # src/.. => project root
+        req_file = repo_root / "requirements.txt"
+        exit_code = install_requirements(req_file)
+        sys.exit(exit_code)
     elif file_path == "test":
         try:
             result = subprocess.run([sys.executable, "-m", "pytest"], check=True, text=True, capture_output=True)

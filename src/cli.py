@@ -1,4 +1,35 @@
 import sys
+from pathlib import Path
+import subprocess
+
+# -------------------
+#  Function to install dependencies from requirements.txt
+# -------------------
+def install_requirements(req_path: Path = None) -> int:
+    if req_path is None:
+        # assume requirements.txt is in project root (one level up from src)
+        req_path = Path(__file__).resolve().parent.parent / "requirements.txt"
+
+    if not req_path.exists():
+        print(f"Error: requirements file not found at {req_path}", file=sys.stderr)
+        return 1
+
+    print(f"Installing dependencies from {req_path} using {sys.executable} -m pip ...")
+    try:
+        # Use the same Python interpreter's pip to ensure correct environment
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", str(req_path)],
+            check=True
+        )
+        print("Dependencies installed successfully.")
+        return 0
+    
+    except subprocess.CalledProcessError as e:
+        print(f"pip install failed with exit code {e.returncode}", file=sys.stderr)
+        return e.returncode
+    except Exception as e:
+        print(f"Unexpected error during install: {e}", file=sys.stderr)
+        return 1
 
 def read_url_file(file_path: str):
     """
