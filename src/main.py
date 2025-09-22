@@ -1,6 +1,8 @@
 import sys
 import json
-from cli import *
+import subprocess
+from cli import * 
+
 
 def main():
     if len(sys.argv) != 2:
@@ -12,9 +14,20 @@ def main():
 
     if file_path == "install":
         # this should be where all dependencies are installed
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+            print("All dependencies installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error installing dependencies: {e}", file=sys.stderr)
+            sys.exit(1)
         sys.exit(0)
     elif file_path == "test":
-        #run all our tests here 
+        try:
+            result = subprocess.run([sys.executable, "-m", "pytest"], check=True, text=True, capture_output=True)
+            print(result.stdout)  # Print the output of pytest
+        except subprocess.CalledProcessError as e:
+            print(f"Tests failed:\n{e.stderr}", file=sys.stderr)
+            sys.exit(1) 
         sys.exit(0)
     else:
         
@@ -41,7 +54,7 @@ def main():
 
             }
             print(json.dumps(result))
-            
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()
