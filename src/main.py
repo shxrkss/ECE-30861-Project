@@ -1,4 +1,5 @@
 import sys
+import os
 import json
 from pathlib import Path
 from cli_utils import install_requirements, read_url_file
@@ -14,17 +15,24 @@ def usage():
     sys.exit(1)
 
 def main():
+    github_token = os.getenv("GITHUB_TOKEN")
+    if not github_token:
+        print("Error: GitHub token not found. Set the GITHUB_TOKEN environment variable.", file=sys.stderr)
+        sys.exit(1)
+
     if len(sys.argv) != 2:
         usage()
 
     arg: str = sys.argv[1]
 
+    
     if arg == "install":
         repo_root = Path(__file__).parent.parent.resolve()
         req_file = repo_root / "requirements.txt"
         exit_code = install_requirements(req_file)
         sys.exit(exit_code)
 
+    
     elif arg == "test":
         #run all our tests here 
         # try:
