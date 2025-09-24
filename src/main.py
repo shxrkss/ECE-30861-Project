@@ -3,12 +3,24 @@ import os
 import json
 from pathlib import Path
 from cli_utils import install_requirements, read_url_file
+import requests
 import subprocess
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
 # -----------------------------------------------------------------------------------
 
+def validate_github_token(token: str) -> bool:
+    """Validate the provided GitHub token by making a simple API request."""
+
+    url = "https://api.github.com/user"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    response = requests.get(url, headers=headers)
+
+    return response.status_code == 200
 
 def usage():
     print("Inorrect Usage -> Try: ./run <install|test|url_file>", file=sys.stderr)
@@ -16,8 +28,9 @@ def usage():
 
 def main():
     github_token = os.getenv("GITHUB_TOKEN")
-    if not github_token:
-        print("Error: GitHub token not found. Set the GITHUB_TOKEN environment variable.", file=sys.stderr)
+    print(github_token)
+    if not github_token or not validate_github_token(github_token):
+        print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
         sys.exit(1)
 
     if len(sys.argv) != 2:
