@@ -2,23 +2,33 @@ import sys
 import json
 import subprocess
 from cli import * 
+import os
+from log import *
 
 
 def main():
+    os.environ["LOG_FILE"] = "logfile.log"
+    setup_logging()
+    logging.critical("Starting Run")
+
     if len(sys.argv) != 2:
         #print("Usage: python cli.py <absolute_path_to_url_file>", file=sys.stderr)
         print("Usage: ./run <install|test|url_file>", file=sys.stderr)
+        logging.critical("Error in usage, exiting.")
         sys.exit(1)
 
     file_path: str = sys.argv[1]
 
     if file_path == "install":
+        logging.debug("Ran install")
         # this should be where all dependencies are installed
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
             print("All dependencies installed successfully.")
+            logging.info("Dependencies installed.")
         except subprocess.CalledProcessError as e:
             print(f"Error installing dependencies: {e}", file=sys.stderr)
+            logging.critical("Error installing dependencies, exiting.")
             sys.exit(1)
         sys.exit(0)
         repo_root = Path(__file__).parent.parent.resolve()  # src/.. => project root
@@ -26,6 +36,7 @@ def main():
         exit_code = install_requirements(req_file)
         sys.exit(exit_code)
     elif file_path == "test":
+        logging.debug("Ran tests")
         try:
             result = subprocess.run([sys.executable, "-m", "pytest"], check=True, text=True, capture_output=True)
             print(result.stdout)  # Print the output of pytest
@@ -34,16 +45,19 @@ def main():
             sys.exit(1) 
         sys.exit(0)
     else:
-        
+        logging.debug("Running program")
         try:
+            print(file_path)
             model_info = read_url_file(file_path)
         except FileNotFoundError:
             print(f"Error: File not found - {file_path}", file=sys.stderr)
+            logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
         #for model_link, code_link, dataset_link in model_info:
             #print(f"{model_link}, {code_link if code_link else 'None'}, {dataset_link if dataset_link else 'None'}")
         for url in model_info:
+            logging.info("Beginning metric calculation.")
             #We have to put the metrics here after we are able to properly calculate them
             result = {
                 "URL": url,
@@ -58,6 +72,7 @@ def main():
 
             }
             print(json.dumps(result))
+            logging.info("Successfully ran program, JSON available.")
             sys.exit(0)
 
 if __name__ == "__main__":
