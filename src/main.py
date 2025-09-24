@@ -1,7 +1,7 @@
 import sys
 import json
 from pathlib import Path
-from src.cli_utils import install_requirements, read_url_file
+from cli_utils import install_requirements, read_url_file
 
 
 # -----------------------------------------------------------------------------------
