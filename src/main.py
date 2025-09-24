@@ -2,7 +2,7 @@ import sys
 import json
 from pathlib import Path
 from cli_utils import install_requirements, read_url_file
-
+import subprocess
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
@@ -27,6 +27,12 @@ def main():
 
     elif arg == "test":
         #run all our tests here 
+        try:
+            result = subprocess.run([sys.executable, "-m", "pytest"], check=True, text=True, capture_output=True)
+            print(result.stdout)  # Print the output of pytest
+        except subprocess.CalledProcessError as e:
+            print(f"Tests failed:\n{e.stderr}", file=sys.stderr)
+            sys.exit(1) 
         sys.exit(0)
 
     else:
