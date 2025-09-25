@@ -33,6 +33,11 @@ def main():
         print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
         sys.exit(1)
 
+    log_file_path = os.getenv("LOG_FILE_PATH")
+    if not log_file_path or not os.path.exists(log_file_path):
+        print(f"Error: Invalid or missing LOG_FILE_PATH environment variable: {log_file_path}", file=sys.stderr)
+        sys.exit(1)
+
     if len(sys.argv) != 2:
         usage()
 
