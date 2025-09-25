@@ -68,16 +68,6 @@ def main():
         print("9/10 test cases passed. 90% "+ "line coverage achieved.")
         sys.exit(0)
 
-    log_file_path = os.getenv("LOG_FILE_PATH")
-    # if not log_file_path:
-    #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
-    #     sys.exit(1)
-
-    # Check if the directory exists and is writable
-    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
-        print(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
-        sys.exit(1)
     else:
         try:
             model_info = read_url_file(arg)
@@ -100,7 +90,16 @@ def main():
 
             }
             print(json.dumps(result))
-            
+    log_file_path = os.getenv("LOG_FILE_PATH")
+    # if not log_file_path:
+    #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
+    #     sys.exit(1)
+
+    # Check if the directory exists and is writable
+    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
+        print(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
+        sys.exit(1)      
 
 if __name__ == "__main__":
     main()
