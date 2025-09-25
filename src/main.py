@@ -90,6 +90,7 @@ def main():
 
             }
             print(json.dumps(result))
+        sys.exit(0)
     log_file_path = os.getenv("LOG_FILE_PATH")
     # if not log_file_path:
     #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
