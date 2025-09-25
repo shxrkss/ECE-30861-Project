@@ -34,9 +34,9 @@ def main():
         sys.exit(1)
 
     log_file_path = os.getenv("LOG_FILE_PATH")
-    if not log_file_path:
-        print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
-        sys.exit(1)
+    # if not log_file_path:
+    #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
+    #     sys.exit(1)
 
     # Check if the directory exists and is writable
     log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
