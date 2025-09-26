@@ -42,9 +42,9 @@ def main():
     #     print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
     #     sys.exit(1)
 
-    # if len(sys.argv) != 2:
-    #     usage()
-        #logging.critical("Error in usage, exiting.")
+    if len(sys.argv) != 2:
+        usage()
+        # logging.critical("Error in usage, exiting.")
     
     arg: str = sys.argv[1]
     
@@ -100,6 +100,7 @@ def main():
 
 
             # Define the exact data structure
+            # made to look exactly like test, remove after #####################
             output_data = {
                 "name": "bert-base-uncased",
                 "category": "MODEL",
@@ -128,13 +129,9 @@ def main():
                 "code_quality_latency": 22
             }
 
-            # Convert the dictionary to a JSON string
-            result = json.dumps(output_data, indent=4)
-
-            # Print the output
-            print(json.dumps(result, indent=2))  # console
-            with open("output.json", "w") as f:   # file
-                json.dump(result, f, indent=2)
+            # Write the JSON data to a file
+            with open('output.json', 'w') as f:
+                json.dump(output_data, f)
 
         sys.exit(0)
 
