@@ -5,6 +5,7 @@ from pathlib import Path
 from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
+from log import *
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
@@ -26,29 +27,27 @@ def usage():
     print("Inorrect Usage -> Try: ./run <install|test|url_file>", file=sys.stderr)
     sys.exit(1)
 
-def main():
+def main():    
+    log_file_path = os.getenv("LOG_FILE_PATH")
+    setup_logging()
+    # Check if the directory exists and is writable
+    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
+        logging.critical(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
+        sys.exit(1)        
+    logging.critical("Starting Run")
+    
     github_token = os.getenv("GITHUB_TOKEN")
     print(github_token)
     if not github_token or not validate_github_token(github_token):
         print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
         sys.exit(1)
 
-    # log_file_path = os.getenv("LOG_FILE_PATH")
-    # # if not log_file_path:
-    # #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
-    # #     sys.exit(1)
-
-    # # Check if the directory exists and is writable
-    # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    # if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
-    #     print(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
-    #     sys.exit(1)
-
     if len(sys.argv) != 2:
         usage()
-
+        logging.critical("Error in usage, exiting.")
+    
     arg: str = sys.argv[1]
-
     
     if arg == "install":
         repo_root = Path(__file__).parent.parent.resolve()
@@ -69,13 +68,17 @@ def main():
         sys.exit(0)
 
     else:
+        logging.debug("Running program")
         try:
-            model_info = read_url_file(arg)
+            print(file_path)
+            model_info = read_url_file(file_path)
         except FileNotFoundError:
-            print(f"Error: File not found - {arg}", file=sys.stderr)
+            print(f"Error: File not found - {file_path}", file=sys.stderr)
+            logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
         for url in model_info:
+            logging.info("Beginning metric calculation.")
             #We have to put the metrics here after we are able to properly calculate them
             result = {
                 "URL": url,
@@ -90,17 +93,9 @@ def main():
 
             }
             print(json.dumps(result))
-        sys.exit(0)
-    log_file_path = os.getenv("LOG_FILE_PATH")
-    # if not log_file_path:
-    #     print("Error: Missing LOG_FILE_PATH environment variable.", file=sys.stderr)
-    #     sys.exit(1)
 
-    # Check if the directory exists and is writable
-    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
-        print(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
-        sys.exit(1)      
+            logging.info("Successfully ran program, JSON available.")
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()
