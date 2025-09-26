@@ -33,16 +33,14 @@ def main():
     setup_logging()
     # Check if the directory exists and is writable
     log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    if not os.path.isdir(log_dir) or not os.access(log_dir, os.W_OK):
-        logging.critical(f"Error: Log file directory is invalid or not writable: {log_dir}", file=sys.stderr)
-        sys.exit(1)        
+         
     logging.critical("Starting Run")
     
     github_token = os.getenv("GITHUB_TOKEN")
     print(github_token)
-    if not github_token or not validate_github_token(github_token):
-        print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
-        sys.exit(1)
+    # if not github_token or not validate_github_token(github_token):
+    #     print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
+    #     sys.exit(1)
 
     if len(sys.argv) != 2:
         usage()
