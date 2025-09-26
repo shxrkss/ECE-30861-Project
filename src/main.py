@@ -29,18 +29,18 @@ def usage():
     sys.exit(1)
 
 def main():    
-    log_file_path = os.getenv("LOG_FILE_PATH")
-    setup_logging()
+    ##log_file_path = os.getenv("LOG_FILE_PATH")
+    #setup_logging()
     # Check if the directory exists and is writable
-    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    ##log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
          
-    logging.critical("Starting Run")
+    #logging.critical("Starting Run")
     
     github_token = os.getenv("GITHUB_TOKEN")
     print(github_token)
-    # if not github_token or not validate_github_token(github_token):
-    #     print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
-    #     sys.exit(1)
+    if not github_token or not validate_github_token(github_token):
+        print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
+        sys.exit(1)
 
     if len(sys.argv) != 2:
         usage()
@@ -67,19 +67,19 @@ def main():
         sys.exit(0)
 
     else:
-        logging.debug("Running program")
+        #logging.debug("Running program")
         try:
             print(arg)
             model_info = read_url_file(arg)
         except FileNotFoundError:
             print(f"Error: File not found - {arg}", file=sys.stderr)
-            logging.critical("Error finding files, exiting.")
+            #logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
         result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
         print(result)
         for url in model_info:
-            logging.info("Beginning metric calculation.")
+            #logging.info("Beginning metric calculation.")
             #We have to put the metrics here after we are able to properly calculate them
             result = {
                 "URL": url,
@@ -95,7 +95,7 @@ def main():
             }
             print(json.dumps(result))
 
-            logging.info("Successfully ran program, JSON available.")
+            #logging.info("Successfully ran program, JSON available.")
             sys.exit(0)
 
 if __name__ == "__main__":
