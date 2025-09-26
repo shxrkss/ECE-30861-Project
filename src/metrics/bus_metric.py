@@ -1,5 +1,5 @@
-from base import MetricBase
-from utils.huggingface_api import get_repo_commits
+from metrics.base import MetricBase
+from metrics.utils.huggingface_api import get_repo_commits
 from typing import Dict, Tuple
 import time
 import requests
@@ -19,7 +19,7 @@ class BusMetric(MetricBase):
     # - contributions per contributor (ci: Dict[str, int])
     # ----------
     def get_github_contributor_stats(self, repo_url: str):
-        
+
         # Parse owner and repo from the URL
         parsed = urlparse(repo_url)
         path_parts = parsed.path.strip("/").split("/")
@@ -29,7 +29,7 @@ class BusMetric(MetricBase):
         owner, repo = path_parts
         api_url = f"https://api.github.com/repos/{owner}/{repo}/stats/contributors"
 
-        print(f"\nFetching contributor stats from: {api_url}")
+        # print(f"\nFetching contributor stats from: {api_url}")
 
         headers = {
             # Optional: add your GitHub token here to avoid rate limits
@@ -40,7 +40,7 @@ class BusMetric(MetricBase):
 
         if response.status_code == 202:
             print("GitHub is generating statistics... try again in a few seconds.")
-            return None
+            return -1, -1, -1
 
         if not response.ok:
             raise Exception(f"GitHub API error: {response.status_code} {response.text}")
@@ -85,7 +85,7 @@ class BusMetric(MetricBase):
         end: float = time.time()
         latency: float = (end - start) * 1000
 
-        print(f"Contributors: {N}, Total Contributions: {C}, Latency: {latency:.2f} ms")
+        # print(f"Contributors: {N}, Total Contributions: {C}, Latency: {latency:.2f} ms")
         return bus_factor, latency
 
 

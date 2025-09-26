@@ -1,10 +1,10 @@
-from base import MetricBase
+from metrics.base import MetricBase
 import math
 from urllib.parse import urlparse
 import requests
 import time
-from utils.huggingface_api import extract_model_or_dataset_id
-from utils.tools import clamp
+from metrics.utils.huggingface_api import extract_model_or_dataset_id
+from metrics.utils.tools import clamp
 
 # THIS METRIC HAS BEEN COMPLETED
 
@@ -45,7 +45,7 @@ class RampMetric(MetricBase):
     def compute(self, url: str) -> float | None:
 
         # Grab the number of downloads for the model and record the latency
-        print(f"\nComputing ramp metric for: {url}")
+        # print(f"\nComputing ramp metric for: {url}")
         downloads, latency = self.get_downloads_and_latency(url)
 
         # Deal with invalid inputs and handle requests.HTTPError
@@ -56,7 +56,7 @@ class RampMetric(MetricBase):
         # Actual calculation for the ramp-up score
         ramp_score = clamp((math.log(downloads) - 5) / 10)
 
-        print(f"Downloads: {downloads}, Latency: {latency:.2f} ms")
+        # print(f"Downloads: {downloads}, Latency: {latency:.2f} ms")
         return ramp_score, latency
 
 
