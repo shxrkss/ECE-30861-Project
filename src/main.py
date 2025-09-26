@@ -36,14 +36,14 @@ def main():
          
     #logging.critical("Starting Run")
     
-    github_token = os.getenv("GITHUB_TOKEN")
-    print(github_token)
-    if not github_token or not validate_github_token(github_token):
-        print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
-        sys.exit(1)
+    # github_token = os.getenv("GITHUB_TOKEN")
+    # print(github_token)
+    # if not github_token or not validate_github_token(github_token):
+    #     print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
+    #     sys.exit(1)
 
-    if len(sys.argv) != 2:
-        usage()
+    # if len(sys.argv) != 2:
+    #     usage()
         #logging.critical("Error in usage, exiting.")
     
     arg: str = sys.argv[1]
@@ -91,10 +91,11 @@ def main():
                 "LICENSE_SCORE": 1.00,
                 "GOOD_PINNING_PRACTICE_SCORE": 0.50,
                 "LATENCY": 123
-
             }
-            print(json.dumps(result))
-
+            #print(json.dumps(result))
+            print(json.dumps(result, indent=2))  # console
+            with open("output.json", "w") as f:   # file
+                json.dump(result, f, indent=2)
             #logging.info("Successfully ran program, JSON available.")
         sys.exit(0)
 
