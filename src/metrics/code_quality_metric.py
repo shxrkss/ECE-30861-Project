@@ -59,7 +59,7 @@ class CodeQualityMetric(MetricBase):
         return 0
 
     def is_applicable(self, code_url) -> bool:
-        if code_url != "N/A":
+        if code_url:
             return True
         
         return False
