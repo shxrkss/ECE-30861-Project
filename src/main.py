@@ -5,8 +5,8 @@ from pathlib import Path
 from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
-from log import *
-from orchestrator import run_all_metrics
+#from log import *
+#from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
@@ -96,17 +96,17 @@ def main():
             print(json.dumps(result))
 
             #logging.info("Successfully ran program, JSON available.")
-            sys.exit(0)
+        sys.exit(0)
 
-            log_file_path = os.getenv("LOG_FILE_PATH")
+    log_file_path = os.getenv("LOG_FILE_PATH")
             # if log_file_path:
             #     print(f"Log file available at: {log_file_path}")
             #     sys.exit(1)
 
-            log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-            if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
-                print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
-                sys.exit(1)
+    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
+        print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
