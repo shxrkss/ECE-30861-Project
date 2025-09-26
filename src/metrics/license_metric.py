@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import os
 
 from huggingface_hub import HfApi
-from base import MetricBase
+from metrics.base import MetricBase
 
 # Common license aliases -> canonical SPDX-ish keys (extend as needed)
 LICENSE_NORMALIZATION = {

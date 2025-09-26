@@ -7,6 +7,7 @@ import requests
 import subprocess
 from metrics.bus_metric import BusMetric
 from metrics.ramp_metric import RampMetric
+from metrics.license_metric import LicenseMetric
 #from log import *
 #from orchestrator import run_all_metrics
 
@@ -93,9 +94,16 @@ def main():
 
                 
                     
-
+            allowed = {
+                "mit",
+                "apache-2.0",
+                "bsd-2-clause",
+                "bsd-3-clause",
+                "mpl-2.0",
+            }
             # #logging.info("Beginning metric calculation.")
             # #We have to put the metrics here after we are able to properly calculate them
+            license_score = LicenseMetric().compute(url[2],allowed, hf_token=os.getenv("HF_TOKEN"))
             ramp_score, ramp_latency = RampMetric().compute(url[2])
             bus_factor, bus_latency = BusMetric().compute(url[0])
             net_score = (ramp_score + bus_factor) / 2
@@ -104,14 +112,14 @@ def main():
                     "name": name,
                     "category": "MODEL",
                     "net_score": net_score,
-                    "net_score_latency": 180,
+                    "net_score_latency": 0,
                     "ramp_up_time": ramp_score,
                     "ramp_up_time_latency": ramp_latency,
                     "bus_factor": bus_factor,
                     "bus_factor_latency": bus_latency,
                     "performance_claims": 0.92,
                     "performance_claims_latency": 35,
-                    "license": 1.00,
+                    "license": license_score,
                     "license_latency": 10,
                     "size_score": {
                         "raspberry_pi": 0.20,
