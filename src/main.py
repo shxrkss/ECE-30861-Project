@@ -5,6 +5,8 @@ from pathlib import Path
 from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
+from metrics.bus_metric import BusMetric
+from metrics.ramp_metric import RampMetric
 #from log import *
 #from orchestrator import run_all_metrics
 
@@ -72,7 +74,7 @@ def main():
         try:
             #print(arg)
             model_info = read_url_file(arg)
-            print(model_info)
+            # print(model_info)
         except FileNotFoundError:
             print(f"Error: File not found - {arg}", file=sys.stderr)
             #logging.critical("Error finding files, exiting.")
@@ -83,36 +85,19 @@ def main():
         for url in model_info:
             # #logging.info("Beginning metric calculation.")
             # #We have to put the metrics here after we are able to properly calculate them
-            # result = {
-            #     "URL": url,
-            #     "NET_SCORE": 0.75,
-            #     "RAMP_UP_SCORE": 0.60,
-            #     "CORRECTNESS_SCORE": 0.80,
-            #     "BUS_FACTOR_SCORE": 0.70,
-            #     "RESPONSIVE_MAINTAINER_SCORE": 0.90,
-            #     "LICENSE_SCORE": 1.00,
-            #     "GOOD_PINNING_PRACTICE_SCORE": 0.50,
-            #     "LATENCY": 123
-            # }
-            # #print(json.dumps(result))
-            # print(json.dumps(result, indent=2))  # console
-            # with open("output.json", "w") as f:   # file
-            #     json.dump(result, f, indent=2)
-            # #logging.info("Successfully ran program, JSON available.")
-
-
-            # Define the exact data structure
-            # made to look exactly like test, remove after #####################
+            ramp_score, ramp_latency = RampMetric().compute(url[2])
+            bus_factor, bus_latency = BusMetric().compute(url[0])
+            net_score = (ramp_score + bus_factor) / 2
             data = [
                 {
-                    "name": "bert-base-uncased",
+                    "name": url[2],
                     "category": "MODEL",
-                    "net_score": 0.95,
+                    "net_score": net_score,
                     "net_score_latency": 180,
-                    "ramp_up_time": 0.90,
-                    "ramp_up_time_latency": 45,
-                    "bus_factor": 0.95,
-                    "bus_factor_latency": 25,
+                    "ramp_up_time": ramp_score,
+                    "ramp_up_time_latency": ramp_latency,
+                    "bus_factor": bus_factor,
+                    "bus_factor_latency": bus_latency,
                     "performance_claims": 0.92,
                     "performance_claims_latency": 35,
                     "license": 1.00,
@@ -130,72 +115,118 @@ def main():
                     "dataset_quality_latency": 20,
                     "code_quality": 0.93,
                     "code_quality_latency": 22
-                },
-                {
-                    "name": "audience_classifier_model",
-                    "category": "MODEL",
-                    "net_score": 0.35,
-                    "net_score_latency": 130,
-                    "ramp_up_time": 0.25,
-                    "ramp_up_time_latency": 42,
-                    "bus_factor": 0.33,
-                    "bus_factor_latency": 30,
-                    "performance_claims": 0.15,
-                    "performance_claims_latency": 28,
-                    "license": 0.00,
-                    "license_latency": 18,
-                    "size_score": {
-                        "raspberry_pi": 0.75,
-                        "jetson_nano": 0.80,
-                        "desktop_pc": 1.00,
-                        "aws_server": 1.00
-                    },
-                    "size_score_latency": 40,
-                    "dataset_and_code_score": 0.00,
-                    "dataset_and_code_score_latency": 5,
-                    "dataset_quality": 0.00,
-                    "dataset_quality_latency": 0,
-                    "code_quality": 0.10,
-                    "code_quality_latency": 12
-                },
-                {
-                    "name": "whisper-tiny",
-                    "category": "MODEL",
-                    "net_score": 0.70,
-                    "net_score_latency": 110,
-                    "ramp_up_time": 0.85,
-                    "ramp_up_time_latency": 30,
-                    "bus_factor": 0.90,
-                    "bus_factor_latency": 20,
-                    "performance_claims": 0.80,
-                    "performance_claims_latency": 35,
-                    "license": 1.00,
-                    "license_latency": 10,
-                    "size_score": {
-                        "raspberry_pi": 0.90,
-                        "jetson_nano": 0.95,
-                        "desktop_pc": 1.00,
-                        "aws_server": 1.00
-                    },
-                    "size_score_latency": 15,
-                    "dataset_and_code_score": 0.00,
-                    "dataset_and_code_score_latency": 40,
-                    "dataset_quality": 0.00,
-                    "dataset_quality_latency": 0,
-                    "code_quality": 0.00,
-                    "code_quality_latency": 0
                 }
             ]
-
-            # Convert to JSON string
-            json_data = json.dumps(data)
-
+            
             # Print JSON
             with open('output.ndjson', 'w') as f:
                 for entry in data:
                     line = json.dumps(entry)
                     print(line)         # Print to stdout
                     f.write(line + '\n')  # Write to file
+
+            # #print(json.dumps(result))
+            # print(json.dumps(result, indent=2))  # console
+            # with open("output.json", "w") as f:   # file
+            #     json.dump(result, f, indent=2)
+            # #logging.info("Successfully ran program, JSON available.")
+
+
+            # Define the exact data structure
+            # made to look exactly like test, remove after #####################
+            # data = [
+            #     {
+            #         "name": "bert-base-uncased",
+            #         "category": "MODEL",
+            #         "net_score": 0.95,
+            #         "net_score_latency": 180,
+            #         "ramp_up_time": 0.90,
+            #         "ramp_up_time_latency": 45,
+            #         "bus_factor": 0.95,
+            #         "bus_factor_latency": 25,
+            #         "performance_claims": 0.92,
+            #         "performance_claims_latency": 35,
+            #         "license": 1.00,
+            #         "license_latency": 10,
+            #         "size_score": {
+            #             "raspberry_pi": 0.20,
+            #             "jetson_nano": 0.40,
+            #             "desktop_pc": 0.95,
+            #             "aws_server": 1.00
+            #         },
+            #         "size_score_latency": 50,
+            #         "dataset_and_code_score": 1.00,
+            #         "dataset_and_code_score_latency": 15,
+            #         "dataset_quality": 0.95,
+            #         "dataset_quality_latency": 20,
+            #         "code_quality": 0.93,
+            #         "code_quality_latency": 22
+            #     },
+            #     {
+            #         "name": "audience_classifier_model",
+            #         "category": "MODEL",
+            #         "net_score": 0.35,
+            #         "net_score_latency": 130,
+            #         "ramp_up_time": 0.25,
+            #         "ramp_up_time_latency": 42,
+            #         "bus_factor": 0.33,
+            #         "bus_factor_latency": 30,
+            #         "performance_claims": 0.15,
+            #         "performance_claims_latency": 28,
+            #         "license": 0.00,
+            #         "license_latency": 18,
+            #         "size_score": {
+            #             "raspberry_pi": 0.75,
+            #             "jetson_nano": 0.80,
+            #             "desktop_pc": 1.00,
+            #             "aws_server": 1.00
+            #         },
+            #         "size_score_latency": 40,
+            #         "dataset_and_code_score": 0.00,
+            #         "dataset_and_code_score_latency": 5,
+            #         "dataset_quality": 0.00,
+            #         "dataset_quality_latency": 0,
+            #         "code_quality": 0.10,
+            #         "code_quality_latency": 12
+            #     },
+            #     {
+            #         "name": "whisper-tiny",
+            #         "category": "MODEL",
+            #         "net_score": 0.70,
+            #         "net_score_latency": 110,
+            #         "ramp_up_time": 0.85,
+            #         "ramp_up_time_latency": 30,
+            #         "bus_factor": 0.90,
+            #         "bus_factor_latency": 20,
+            #         "performance_claims": 0.80,
+            #         "performance_claims_latency": 35,
+            #         "license": 1.00,
+            #         "license_latency": 10,
+            #         "size_score": {
+            #             "raspberry_pi": 0.90,
+            #             "jetson_nano": 0.95,
+            #             "desktop_pc": 1.00,
+            #             "aws_server": 1.00
+            #         },
+            #         "size_score_latency": 15,
+            #         "dataset_and_code_score": 0.00,
+            #         "dataset_and_code_score_latency": 40,
+            #         "dataset_quality": 0.00,
+            #         "dataset_quality_latency": 0,
+            #         "code_quality": 0.00,
+            #         "code_quality_latency": 0
+            #     }
+            # ]
+
+            # Convert to JSON string
+            # json_data = json.dumps(data)
+
+            # # Print JSON
+            # with open('output.ndjson', 'w') as f:
+            #     for entry in data:
+            #         line = json.dumps(entry)
+            #         print(line)         # Print to stdout
+            #         f.write(line + '\n')  # Write to file
 
         sys.exit(0)
 
