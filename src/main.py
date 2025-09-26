@@ -6,6 +6,7 @@ from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
 from log import *
+from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
@@ -70,13 +71,15 @@ def main():
     else:
         logging.debug("Running program")
         try:
-            print(file_path)
-            model_info = read_url_file(file_path)
+            print(arg)
+            model_info = read_url_file(arg)
         except FileNotFoundError:
-            print(f"Error: File not found - {file_path}", file=sys.stderr)
+            print(f"Error: File not found - {arg}", file=sys.stderr)
             logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
+        result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
+        print(result)
         for url in model_info:
             logging.info("Beginning metric calculation.")
             #We have to put the metrics here after we are able to properly calculate them

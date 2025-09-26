@@ -25,4 +25,24 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     code_url, dataset_url, model_url = repo_info
     results: Dict[str, float] = {}
 
-    
+    metrics = [
+        BusMetric(),
+        CodeQualityMetric(),
+        DataQualityMetric(),
+        DatasetCodeMetric(),
+        LicenseMetric(),
+        PerformanceMetric(),
+        RampMetric(),
+        SizeMetric()
+    ]
+
+    for metric in metrics:
+        try:
+            metric_name = metric.__class__.__name__
+            score = metric.run(code_url, dataset_url, model_url)
+            results[metric_name] = score
+        except Exception as e:
+            results[metric_name] = -1.0  # Indicate failure with a negative score
+            print(f"Error running {metric_name}: {e}")
+
+    return results

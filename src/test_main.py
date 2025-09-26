@@ -3,8 +3,9 @@ import sys
 import subprocess
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+print("sys.path:", sys.path)
 sys.path.append(str(Path(__file__).resolve().parent))
-from main import main
+from src.main import main
 
 def test_no_arguments(capsys):
     with patch.object(sys, 'argv', ['main.py']):
