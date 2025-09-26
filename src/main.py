@@ -44,7 +44,7 @@ def main():
 
     if len(sys.argv) != 2:
         usage()
-        logging.critical("Error in usage, exiting.")
+        #logging.critical("Error in usage, exiting.")
     
     arg: str = sys.argv[1]
     
@@ -69,15 +69,15 @@ def main():
     else:
         #logging.debug("Running program")
         try:
-            print(arg)
+            #print(arg)
             model_info = read_url_file(arg)
         except FileNotFoundError:
             print(f"Error: File not found - {arg}", file=sys.stderr)
             #logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
-        result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
-        print(result)
+        #result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
+        #print(result)
         for url in model_info:
             #logging.info("Beginning metric calculation.")
             #We have to put the metrics here after we are able to properly calculate them
@@ -97,6 +97,16 @@ def main():
 
             #logging.info("Successfully ran program, JSON available.")
             sys.exit(0)
+
+            log_file_path = os.getenv("LOG_FILE_PATH")
+            # if log_file_path:
+            #     print(f"Log file available at: {log_file_path}")
+            #     sys.exit(1)
+
+            log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+            if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
+                print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
+                sys.exit(1)
 
 if __name__ == "__main__":
     main()
