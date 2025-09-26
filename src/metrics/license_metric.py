@@ -77,6 +77,7 @@ LICENSE_REGEX = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
+
 class LicenseMetric(MetricBase):
     def __init__(self) -> None:
         super().__init__("license")
