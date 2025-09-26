@@ -65,7 +65,9 @@ class BusMetric(MetricBase):
     # Computes the bus metric using contributor information
     # -------------------
     def compute(self, url: str) -> Tuple[float, float]:
-
+        
+        if url == None:
+            return 0,0
         start: float = time.time()
 
         N: int # Number of contributors

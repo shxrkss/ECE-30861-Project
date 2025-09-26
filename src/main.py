@@ -82,7 +82,18 @@ def main():
 
         #result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
         #print(result)
+        f = open('output.ndjson', 'w')
+        f.close()
         for url in model_info:
+            url__ = url[2]
+            if url__.endswith('/tree/main'):
+                url__ = url__[:-len('/tree/main')]
+            parts = [part for part in url__.split('/') if part]
+            name = parts[-1] if parts else ''
+
+                
+                    
+
             # #logging.info("Beginning metric calculation.")
             # #We have to put the metrics here after we are able to properly calculate them
             ramp_score, ramp_latency = RampMetric().compute(url[2])
@@ -90,7 +101,7 @@ def main():
             net_score = (ramp_score + bus_factor) / 2
             data = [
                 {
-                    "name": url[2],
+                    "name": name,
                     "category": "MODEL",
                     "net_score": net_score,
                     "net_score_latency": 180,
@@ -119,7 +130,7 @@ def main():
             ]
             
             # Print JSON
-            with open('output.ndjson', 'w') as f:
+            with open('output.ndjson', 'a') as f:
                 for entry in data:
                     line = json.dumps(entry)
                     print(line)         # Print to stdout
