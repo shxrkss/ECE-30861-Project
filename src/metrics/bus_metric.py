@@ -39,7 +39,7 @@ class BusMetric(MetricBase):
         response = requests.get(api_url, headers=headers)
 
         if response.status_code == 202:
-            print("GitHub is generating statistics... try again in a few seconds.")
+            # print("GitHub is generating statistics... try again in a few seconds.")
             return -1, -1, -1
 
         if not response.ok:
