@@ -68,9 +68,9 @@ def main():
         sys.exit(0)
 
     else:
-        from metrics.bus_metric import BusMetric
-        from metrics.ramp_metric import RampMetric
-        from metrics.license_metric import LicenseMetric
+        # from metrics.bus_metric import BusMetric
+        # from metrics.ramp_metric import RampMetric
+        # from metrics.license_metric import LicenseMetric
         
         #logging.debug("Running program")
         try:
