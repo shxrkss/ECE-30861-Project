@@ -5,9 +5,9 @@ from pathlib import Path
 from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
-# from metrics.bus_metric import BusMetric
-# from metrics.ramp_metric import RampMetric
-# from metrics.license_metric import LicenseMetric
+from metrics.bus_metric import BusMetric
+from metrics.ramp_metric import RampMetric
+from metrics.license_metric import LicenseMetric
 #from log import *
 #from orchestrator import run_all_metrics
 
