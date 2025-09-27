@@ -280,8 +280,8 @@
 #         except Exception as e:
 #             print("Error:", u, e)
 ##########################################################################################################
-from src.metrics.base import MetricBase
-from src.metrics.utils.tools import parse_github_url
+from metrics.base import MetricBase
+from metrics.utils.tools import parse_github_url
 from dotenv import load_dotenv
 from github import Github
 import os
