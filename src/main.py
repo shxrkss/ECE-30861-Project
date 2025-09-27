@@ -140,7 +140,7 @@ def main():
             # Print JSON
             with open('output.ndjson', 'a') as f:
                 for entry in data:
-                    line = json.dumps(entry)
+                    line = json.dumps(entry, separators=(',', ':'))
                     print(line)         # Print to stdout
                     f.write(line + '\n')  # Write to file
 
