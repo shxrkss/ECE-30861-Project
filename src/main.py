@@ -71,6 +71,7 @@ def main():
         # from metrics.bus_metric import BusMetric
         # from metrics.ramp_metric import RampMetric
         # from metrics.license_metric import LicenseMetric
+        import orchestrator
         
         #logging.debug("Running program")
         try:
