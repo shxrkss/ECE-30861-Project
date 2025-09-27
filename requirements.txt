@@ -4,4 +4,4 @@ PyGithub
 pytest
 huggingface_hub
 requests
-dotenv
+python-dotenv
