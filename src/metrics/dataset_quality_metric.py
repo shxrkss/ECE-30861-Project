@@ -1,9 +1,12 @@
-from base import MetricBase
+from metrics.base import MetricBase
 import time
 import requests
-from utils.huggingface_api import extract_model_or_dataset_id
-from utils.tools import clamp
+from typing import Tuple
+from metrics.utils.huggingface_api import extract_model_or_dataset_id
+from metrics.utils.tools import clamp
+from typing import Optional, Dict, Any
 
+# ALL PRINT STATEMENTS NEED TO GO TO LOGGING
 
 class DataQualityMetric(MetricBase):
     def __init__(self) -> None:
@@ -13,8 +16,10 @@ class DataQualityMetric(MetricBase):
     # Internal scoring helpers
     # -------------------------
     def _score_description(self, description: str) -> float:
+        """Scores description length."""
+
         if not description:
-            return 0.0
+            return 0.2
         length = len(description.strip())
         if length < 50:
             return 0.3
@@ -23,8 +28,10 @@ class DataQualityMetric(MetricBase):
         return 1.0
 
     def _score_features(self, features: dict) -> float:
+        """Scores based on number of features."""
+
         if not features:
-            return 0.0
+            return 0.2
         num_features = len(features)
         if num_features == 0:
             return 0.0
@@ -33,29 +40,40 @@ class DataQualityMetric(MetricBase):
         return 1.0
 
     def _score_contributors(self, siblings: list) -> float:
+        """Scores based on number of contributors."""
+
         if not siblings:
-            return 0.0
+            return 0.2
         if len(siblings) == 1:
             return 0.5
         return 1.0
 
     def _score_license(self, license: str) -> float:
-        return 1.0 if license else 0.0
+        """Scores based on presence of license."""
+
+        return 1.0 if license else 0.2
 
     # -------------------------
     # API Fetch
     # -------------------------
-    def get_metadata_and_latency(self, url: str):
+    def get_metadata_and_latency(self, url: str) -> Optional[Dict[str, Any]]:
+        """Fetches dataset metadata from HuggingFace API.
+            args:
+                url: HuggingFace dataset URL
+            returns:
+                dict with metadata if successful, else None
+        """
         dataset_id = extract_model_or_dataset_id(url)
+
+        if dataset_id.startswith("datasets/"):
+            dataset_id = dataset_id[len("datasets/"):]
         api_url = f"https://huggingface.co/api/datasets/{dataset_id}"
 
         try:
-            start = time.time()
             response = requests.get(api_url)
             response.raise_for_status()
-            latency = (time.time() - start) * 1000  # ms
             data = response.json()
-            return data, latency
+            return data
         except requests.HTTPError as e:
             print(f"API request failed for {dataset_id}: {e}")
             return None, None
@@ -63,13 +81,28 @@ class DataQualityMetric(MetricBase):
     # -------------------------
     # Compute Quality Score
     # -------------------------
-    def compute(self, url: str) -> float | None:
-        print(f"\nComputing data quality metric for: {url}")
-        data, latency = self.get_metadata_and_latency(url)
+    def compute(self, url: str) -> Tuple[float, int]:
+        """Computes the data quality score for a given HuggingFace dataset URL.
+
+            Args:
+                url: Hugging Face dataset URL
+
+            Returns tuple:
+                data_quality_score: A float between 0 and 1 representing the data quality
+                latency: Time taken to compute the metric in milliseconds
+        """
+        
+        start = time.time()
+
+        if self.is_applicable(url) is False:
+            # print(f"DataQualityMetric not applicable for URL: {url}")
+            return 0.0, 0
+        
+        data = self.get_metadata_and_latency(url)
 
         if not data:
             print(f"Invalid or missing metadata for {url}")
-            return None
+            return 0.0, 0
 
         card_data = data.get("cardData", {}) or {}
 
@@ -84,22 +117,25 @@ class DataQualityMetric(MetricBase):
             description_score + features_score + contributors_score + license_score
         ) / 4
 
-        overall_score = clamp(overall_score)
+        card_bonus = 0.1 if card_data else 0.0
+        overall_score = clamp(overall_score + card_bonus)
 
-        print(
-            f"Description: {description_score}, Features: {features_score}, "
-            f"Contributors: {contributors_score}, License: {license_score}"
-        )
-        print(f"Overall Quality Score: {overall_score:.4f}, Latency: {latency:.2f} ms")
+        end = time.time()
+        latency = (end - start) * 1000  # convert to milliseconds
+        latency = int(latency)
 
         return overall_score, latency
 
+    def is_applicable(self, url: Optional[str]) -> bool:
+        if url is None:
+            return False
+        return True
 
 # -------------------------
 # Example Usage
 # -------------------------
 if __name__ == "__main__":
-    url = "https://huggingface.co/datasets/squad"
+    url = "https://huggingface.co/datasets/bookcorpus/bookcorpus"
     metric = DataQualityMetric()
     score, latency = metric.compute(url)
 
