@@ -1,8 +1,9 @@
-from metrics.base import MetricBase
 import math
 from urllib.parse import urlparse
 import requests
 import time
+from typing import Tuple
+from metrics.base import MetricBase
 from metrics.utils.huggingface_api import extract_model_or_dataset_id
 from metrics.utils.tools import clamp
 
@@ -11,7 +12,6 @@ from metrics.utils.tools import clamp
 class RampMetric(MetricBase):
     def __init__(self) -> None:
         super().__init__("ramp_up")
-
 
     # -------------------
     # Accesses API from url and gets the number of downloads for the specified model
@@ -42,16 +42,15 @@ class RampMetric(MetricBase):
     # -------------------
     # Computes the ramp-up score based on number of downloads relative to other models
     # -------------------
-    def compute(self, url: str) -> float | None:
+    def compute(self, url: str) -> Tuple[float, float]:
 
         # Grab the number of downloads for the model and record the latency
-        # print(f"\nComputing ramp metric for: {url}")
         downloads, latency = self.get_downloads_and_latency(url)
 
         # Deal with invalid inputs and handle requests.HTTPError
         if downloads is None or downloads <= 0:
             print(f"Invalid or missing downloads count for {url}")
-            return None
+            return 0.0, 0
 
         # Actual calculation for the ramp-up score
         ramp_score = clamp((math.log(downloads) - 5) / 10)

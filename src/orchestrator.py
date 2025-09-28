@@ -19,6 +19,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     from metrics.code_quality_metric import CodeQualityMetric
     from metrics.dataset_quality_metric import DataQualityMetric
     from metrics.license_metric import LicenseMetric
+    from metrics.ramp_metric import RampMetric
 
     code_url, dataset_url, model_url = repo_info
 
@@ -26,6 +27,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     code_score, code_latency = None, None
     data_score, data_latency = None, None
     license_score, license_latency = None, None
+    ramp_score, ramp_latency = None, None
 
     def run_bus():
         nonlocal bus_score, bus_latency
@@ -44,13 +46,17 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         nonlocal license_score, license_latency
         allowed = {'mit', 'apache-2.0', 'bsd-3-clause', 'bsd-2-clause', 'gpl-3.0', 'lgpl-3.0', 'mpl-2.0'}
         license_score, license_latency = LicenseMetric().compute(model_url, allowed=allowed, hf_token=None)
-
+    
+    def run_ramp():
+        nonlocal ramp_score, ramp_latency
+        ramp_score, ramp_latency = RampMetric().compute(model_url)
     
     with ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(run_bus)
         executor.submit(run_code)
         executor.submit(run_data)
         executor.submit(run_license)
+        executor.submit(run_ramp)
 
     end = time.time()
     net_latency = (end - start) * 1000
@@ -59,8 +65,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     return {
         "net_score": 0.95,
         "net_score_latency": net_latency,
-        "ramp_up_time": 0.90,
-        "ramp_up_time_latency": 45,
+        "ramp_up_time": round(ramp_score, 2),
+        "ramp_up_time_latency": int(ramp_latency),
         "bus_factor": round(bus_score, 2),
         "bus_factor_latency": int(bus_latency),
         "performance_claims": 0.92,
