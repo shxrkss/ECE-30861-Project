@@ -6,8 +6,8 @@ from typing import Optional, List, Tuple, Dict, Any
 from urllib.parse import urlparse
 
 from huggingface_hub import HfApi
-from base import MetricBase
-from utils.tools import clamp
+from src.metrics.base import MetricBase
+from src.metrics.utils.tools import clamp
 
 # --- Heuristics ---
 BENCHMARK_KEYWORDS = [
@@ -353,10 +353,8 @@ if __name__ == "__main__":
     metric = PerformanceClaimMetric()
     tests = [
         "https://huggingface.co/google-bert/bert-base-uncased",
+        "https://huggingface.co/parvk11/audience_classifier_model",
         "https://huggingface.co/openai/whisper-tiny",
-        # add a repo you know has a 'model-index' or benchmark tables in README
-        "https://huggingface.co/tiiuae/falcon-7b",
-        "https://huggingface.co/EleutherAI/gpt-neox-20b",
     ]
     for u in tests:
         try:

@@ -31,12 +31,12 @@ def usage():
     sys.exit(1)
 
 def main():    
-    log_file_path = os.getenv("LOG_FILE_PATH")
-    # Check if the directory exists and is writable
-    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
-        print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
-        sys.exit(1)
+    # log_file_path = os.getenv("LOG_FILE_PATH")
+    # # Check if the directory exists and is writable
+    # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    # if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
+    #     print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
+    #     sys.exit(1)
     setup_logging()
     logging.critical("Starting Run")
     
