@@ -35,14 +35,12 @@ def install_requirements(req_path: Path = None) -> int:
         print(f"Unexpected error during install: {e}", file=sys.stderr)
         return 1
 
-
-
 def read_url_file(file_path: str):
     """
     Parses the input file line-by-line.
     Each line: code_link, dataset_link, model_link
     Returns:
-        model_info: List of tuples (model_link, code_link or None, dataset_link or None)
+        model_info: List of tuples (code_link or None, dataset_link or None, model_link)
     """
     model_info = []
 
@@ -67,13 +65,3 @@ def read_url_file(file_path: str):
             model_info.append((code_link, dataset_link, model_link))
 
     return model_info
-
-# def read_url_file(file_path):
-#     if file_path.startswith("http"):
-#         # Split by comma or whitespace into URLs
-#         return [u.strip() for u in file_path.replace("\n", ",").split(",") if u.strip()]
-#     elif os.path.exists(file_path):
-#         with open(file_path, "r") as f:
-#             return [line.strip() for line in f if line.strip()]
-#     else:
-#         raise ValueError(f"Invalid input: {file_path}")

@@ -68,84 +68,36 @@ def main():
         sys.exit(0)
 
     else:
-        # from metrics.bus_metric import BusMetric
-        # from metrics.ramp_metric import RampMetric
-        # from metrics.license_metric import LicenseMetric
-        import orchestrator
+        from orchestrator import run_all_metrics
         
         #logging.debug("Running program")
         try:
-            #print(arg)
             model_info = read_url_file(arg)
-            # print(model_info)
         except FileNotFoundError:
             print(f"Error: File not found - {arg}", file=sys.stderr)
-            #logging.critical("Error finding files, exiting.")
             sys.exit(1)
 
-        #result = run_all_metrics("https://github.com/google-research/bert", "https://huggingface.co/datasets/bookcorpus/bookcorpus", "https://huggingface.co/google-bert/bert-base-uncased")
-        #print(result)
-        f = open('output.ndjson', 'w')
-        f.close()
-        for url in model_info:
-            url__ = url[2]
-            if url__.endswith('/tree/main'):
-                url__ = url__[:-len('/tree/main')]
+        open('output.ndjson', 'w').close()
+
+        for repo_info in model_info:
+            code_url, dataset_url, model_url = repo_info
+            url__ = model_url.rstrip('/tree/main')
             parts = [part for part in url__.split('/') if part]
             name = parts[-1] if parts else ''
 
-                
-                    
-            allowed = {
-                "mit",
-                "apache-2.0",
-                "bsd-2-clause",
-                "bsd-3-clause",
-                "mpl-2.0",
-            }
-            # #logging.info("Beginning metric calculation.")
-            # #We have to put the metrics here after we are able to properly calculate them
-            # license_score = LicenseMetric().compute(url[2],allowed, hf_token=os.getenv("HF_TOKEN"))
-            # ramp_score, ramp_latency = RampMetric().compute(url[2])
-            # bus_factor, bus_latency = BusMetric().compute(url[0])
-            # net_score = (ramp_score + bus_factor) / 2
-            data = [
-                {
-                    "name": name,
-                    "category": "MODEL",
-                    "net_score": 0.95,
-                    "net_score_latency": 180,
-                    "ramp_up_time": 0.90,
-                    "ramp_up_time_latency": 45,
-                    "bus_factor": 0.95,
-                    "bus_factor_latency": 25,
-                    "performance_claims": 0.92,
-                    "performance_claims_latency": 35,
-                    "license": 1.00,
-                    "license_latency": 10,
-                    "size_score": {
-                        "raspberry_pi": 0.20,
-                        "jetson_nano": 0.40,
-                        "desktop_pc": 0.95,
-                        "aws_server": 1.00
-                    },
-                    "size_score_latency": 50,
-                    "dataset_and_code_score": 1.00,
-                    "dataset_and_code_score_latency": 15,
-                    "dataset_quality": 0.95,
-                    "dataset_quality_latency": 20,
-                    "code_quality": 0.93,
-                    "code_quality_latency": 22
-                }
-            ]
-            
-            # Print JSON
-            with open('output.ndjson', 'a') as f:
-                for entry in data:
-                    line = json.dumps(entry, separators=(',', ':'))
-                    print(line)         # Print to stdout
-                    f.write(line + '\n')  # Write to file
+            results = run_all_metrics(repo_info)
 
+            data = {
+                "name": name,
+                "category": "MODEL",
+                **results
+            }
+
+            with open('output.ndjson', 'a') as f:
+                line = json.dumps(data, separators=(',', ':'))
+                print(line)
+                f.write(line + '\n')
+        
         sys.exit(0)
 
     log_file_path = os.getenv("LOG_FILE_PATH")
