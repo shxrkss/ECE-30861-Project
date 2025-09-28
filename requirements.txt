@@ -5,3 +5,6 @@ pytest
 huggingface_hub
 requests
 python-dotenv
+pylint
+flake8
+hf_xet

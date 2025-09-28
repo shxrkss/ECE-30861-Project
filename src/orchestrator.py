@@ -9,19 +9,22 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     repo_info = (code_url, dataset_url, model_url)
 
     Returns:
-        dict of metric_name -> score/latency
+        A dictionary with all metric results.
     """
 
     # Import metric classes -> each new metric needs to be imported here
     from metrics.bus_metric import BusMetric
+    from metrics.code_quality_metric import CodeQualityMetric
 
     code_url, dataset_url, model_url = repo_info
     
     try:
         bus_score, bus_latency = BusMetric().compute(model_url)
+        code_score, code_latency = CodeQualityMetric().compute(code_url, model_url)
     except Exception as e:
-        print(f"Error running BusMetric: {e}", file=sys.stderr)
+        print(f"Error running metrics: {e}", file=sys.stderr)
         bus_score, bus_latency = -1.0, -1
+        code_score, code_latency = -1.0, -1
 
 
     return {
@@ -46,8 +49,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         "dataset_and_code_score_latency": 15,
         "dataset_quality": 0.95,
         "dataset_quality_latency": 20,
-        "code_quality": 0.93,
-        "code_quality_latency": 22
+        "code_quality": code_score,
+        "code_quality_latency": int(code_latency)
     }
 
 
