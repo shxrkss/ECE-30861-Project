@@ -5,9 +5,11 @@ from typing import Dict, Tuple
 import time
 from urllib.parse import urlparse
 import math
+import sys
 
 # THIS METRIC HAS BEEN COMPLETED
 # if needed, can implement huggingface api token with: HF_API_TOKEN
+# ADD ALL PRINT STATEMENTS TO LOGGING
 
 class BusMetric(MetricBase):
     def __init__(self) -> None:
@@ -18,16 +20,22 @@ class BusMetric(MetricBase):
     # Gets contributor statistics from a HuggingFace model repository
     # -------------------
     def get_hf_contributor_stats(self, repo_url: str) -> Tuple[int, int, Dict[str, int]]:
-        ''' Returns (N, C, ci) where:
-            N = number of unique contributors
-            C = total number of contributions (commits)
-            ci = dictionary mapping contributor to their number of contributions
-        '''
+        """
+            Fetches contributor statistics from a HuggingFace model repository.
+
+            Args:
+                repo_url = HuggingFace model URL
+
+            Returns tuple:
+                N: Number of unique contributors
+                C: Total number of contributions (commits)
+                ci: Dictionary mapping contributor usernames to their contribution counts
+        """
 
         # parse owner / repo from HF model URL
         parsed_parts = urlparse(repo_url).path.strip('/').split('/')
         if len(parsed_parts) < 2:
-            return {}
+            return 0, 0, {}
         repo_id = f"{parsed_parts[0]}/{parsed_parts[1]}"
 
         ci: Dict[str, int] = {}
@@ -37,6 +45,7 @@ class BusMetric(MetricBase):
         try:
             commits = self.hf.list_repo_commits(repo_id=repo_id)
         except Exception as e:
+            print(f"Error fetching commits: {e}", file=sys.stderr)
             return 0, 0, {}
 
         for c in commits:
@@ -51,7 +60,17 @@ class BusMetric(MetricBase):
     # -------------------
     # Computes the bus metric using contributor information
     # -------------------
-    def compute(self, url: str) -> Tuple[float, float]:
+    def compute(self, url: str) -> Tuple[float, int]:
+        """
+            Computes the bus factor metric for a given HuggingFace model URL.
+
+            Args:
+                url: Hugging Face model URL
+
+            Returns tuple:
+                bus_factor: A float between 0 and 1 representing the bus factor
+                latency: Time taken to compute the metric in milliseconds
+        """
         if url is None:
             return 0, 0
 
@@ -79,8 +98,6 @@ class BusMetric(MetricBase):
         latency = int((time.time() - start) * 1000)
 
         return normalized_entropy, latency
-
-
 
 # -------------------
 # Example code snippet that shows how to use the bus metric

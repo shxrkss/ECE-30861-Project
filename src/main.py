@@ -37,6 +37,7 @@ def main():
          
     #logging.critical("Starting Run")
     
+    # UNCOMMENT THIS WHEN SUBMITTING
     # github_token = os.getenv("GITHUB_TOKEN")
     # print(github_token)
     # if not github_token or not validate_github_token(github_token):
