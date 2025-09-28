@@ -4,7 +4,7 @@ import re
 from typing import Optional, Set, Tuple
 from urllib.parse import urlparse
 import os
-
+import time
 from huggingface_hub import HfApi
 from metrics.base import MetricBase
 
@@ -195,11 +195,13 @@ class LicenseMetric(MetricBase):
         return None
 
     # --- Scoring (binary) ---
-    def compute(self, url: str, allowed: Set[str], hf_token: Optional[str] = None) -> float:
+    def compute(self, url: str, allowed: Set[str], hf_token: Optional[str] = None) -> Tuple[float, int]:
         """
         Returns 1.0 if the model license is in `allowed` (after normalization), else 0.0.
         `allowed` should contain normalized keys (e.g., {'mit','apache-2.0','bsd-3-clause', ...}).
         """
+        start = time.time()
+
         repo_id = self.url_to_repo_id(url)
         info = self.get_model_info(repo_id, token=hf_token)
 
@@ -213,9 +215,19 @@ class LicenseMetric(MetricBase):
 
         # If still unknown, treat as not permitted
         if not norm:
-            return 0.0
+            end = time.time()
+            latency = (end - start) * 1000
+            latency = int(latency)
+            return 0.0, latency
+        
+        end = time.time()
+        latency = (end - start) * 1000
+        latency = int(latency)
 
-        return 1.0 if norm in allowed else 0.0
+        if norm in allowed:
+            return 1.0, latency
+        
+        return 0.0, latency
 
 if __name__ == "__main__":
     metric = LicenseMetric()
@@ -242,7 +254,8 @@ if __name__ == "__main__":
 
     for u in urls:
         try:
-            score = metric.compute(u, allowed=allowed, hf_token=os.getenv("HF_TOKEN"))
-            print(f"{u} -> license_ok={score:.0f}")
+            score, latency = metric.compute(u, allowed=allowed, hf_token=os.getenv("HF_TOKEN"))
+            print("score: ", score)
+            print("latency: ", latency)
         except Exception as e:
             print("Error:", u, e)
