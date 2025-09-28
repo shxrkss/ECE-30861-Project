@@ -8,3 +8,5 @@ python-dotenv
 pylint
 flake8
 hf_xet
+accelerate
+transformers

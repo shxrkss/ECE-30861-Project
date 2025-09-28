@@ -20,6 +20,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     from metrics.dataset_quality_metric import DataQualityMetric
     from metrics.license_metric import LicenseMetric
     from metrics.ramp_metric import RampMetric
+    from metrics.size_metric import SizeMetric
 
     code_url, dataset_url, model_url = repo_info
 
@@ -28,6 +29,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     data_score, data_latency = None, None
     license_score, license_latency = None, None
     ramp_score, ramp_latency = None, None
+    size_rpi, size_jetson, size_pc, size_aws, size_latency = None, None, None, None, None
 
     def run_bus():
         nonlocal bus_score, bus_latency
@@ -51,12 +53,17 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         nonlocal ramp_score, ramp_latency
         ramp_score, ramp_latency = RampMetric().compute(model_url)
     
+    def run_size():
+        nonlocal size_rpi, size_jetson, size_pc, size_aws, size_latency
+        size_rpi, size_jetson, size_pc, size_aws, size_latency = SizeMetric().compute(model_url, hf_token=None)
+    
     with ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(run_bus)
         executor.submit(run_code)
         executor.submit(run_data)
         executor.submit(run_license)
         executor.submit(run_ramp)
+        executor.submit(run_size)
 
     end = time.time()
     net_latency = (end - start) * 1000
@@ -74,12 +81,12 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         "license": round(license_score, 2),
         "license_latency": license_latency,
         "size_score": {
-            "raspberry_pi": 0.20,
-            "jetson_nano": 0.40,
-            "desktop_pc": 0.95,
-            "aws_server": 1.00
+            "raspberry_pi": round(size_rpi, 2),
+            "jetson_nano": round(size_jetson, 2),
+            "desktop_pc": round(size_pc, 2),
+            "aws_server": round(size_aws, 2)
         },
-        "size_score_latency": 50,
+        "size_score_latency": int(size_latency),
         "dataset_and_code_score": 1.00,
         "dataset_and_code_score_latency": 15,
         "dataset_quality": round(data_score, 2),
