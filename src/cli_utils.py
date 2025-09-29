@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import subprocess
-
+import os
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
@@ -35,14 +35,12 @@ def install_requirements(req_path: Path = None) -> int:
         print(f"Unexpected error during install: {e}", file=sys.stderr)
         return 1
 
-
-
 def read_url_file(file_path: str):
     """
     Parses the input file line-by-line.
     Each line: code_link, dataset_link, model_link
     Returns:
-        model_info: List of tuples (model_link, code_link or None, dataset_link or None)
+        model_info: List of tuples (code_link or None, dataset_link or None, model_link)
     """
     model_info = []
 

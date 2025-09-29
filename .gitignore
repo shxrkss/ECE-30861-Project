@@ -3,3 +3,4 @@
 .env
 README.md
 logfile.log
+output.ndjson

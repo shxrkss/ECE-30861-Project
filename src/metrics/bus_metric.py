@@ -1,103 +1,113 @@
-from base import MetricBase
-from utils.huggingface_api import get_repo_commits
+# NOTE: If testing this file directly, ensure to add "src." before "metrics.base"
+from metrics.base import MetricBase
+from huggingface_hub import HfApi
 from typing import Dict, Tuple
 import time
-import requests
 from urllib.parse import urlparse
+import math
+import sys
 
 # THIS METRIC HAS BEEN COMPLETED
+# if needed, can implement huggingface api token with: HF_API_TOKEN
+# ADD ALL PRINT STATEMENTS TO LOGGING
 
 class BusMetric(MetricBase):
     def __init__(self) -> None:
         super().__init__("bus_factor")
+        self.hf = HfApi()
 
+    # -------------------
+    # Gets contributor statistics from a HuggingFace model repository
+    # -------------------
+    def get_hf_contributor_stats(self, repo_url: str) -> Tuple[int, int, Dict[str, int]]:
+        """
+            Fetches contributor statistics from a HuggingFace model repository.
 
-    # ----------
-    # Given a GitHub repo URL, returns:
-    # - number of contributors (N)
-    # - total contributions (C)
-    # - contributions per contributor (ci: Dict[str, int])
-    # ----------
-    def get_github_contributor_stats(self, repo_url: str):
-        
-        # Parse owner and repo from the URL
-        parsed = urlparse(repo_url)
-        path_parts = parsed.path.strip("/").split("/")
-        if len(path_parts) != 2:
-            raise ValueError("Invalid GitHub repo URL format")
+            Args:
+                repo_url = HuggingFace model URL
 
-        owner, repo = path_parts
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/stats/contributors"
+            Returns tuple:
+                N: Number of unique contributors
+                C: Total number of contributions (commits)
+                ci: Dictionary mapping contributor usernames to their contribution counts
+        """
 
-        print(f"\nFetching contributor stats from: {api_url}")
+        # parse owner / repo from HF model URL
+        parsed_parts = urlparse(repo_url).path.strip('/').split('/')
+        if len(parsed_parts) < 2:
+            return 0, 0, {}
+        repo_id = f"{parsed_parts[0]}/{parsed_parts[1]}"
 
-        headers = {
-            # Optional: add your GitHub token here to avoid rate limits
-            # "Authorization": "Bearer YOUR_GITHUB_TOKEN"
-        }
+        ci: Dict[str, int] = {}
+        total = 0
 
-        response = requests.get(api_url, headers=headers)
+        # This returns a list of CommitInfo objects
+        try:
+            commits = self.hf.list_repo_commits(repo_id=repo_id)
+        except Exception as e:
+            print(f"Error fetching commits: {e}", file=sys.stderr)
+            return 0, 0, {}
 
-        if response.status_code == 202:
-            print("GitHub is generating statistics... try again in a few seconds.")
-            return None
+        for c in commits:
+            for author in c.authors:
+                ci[author] = ci.get(author, 0) + 1
+                total += 1
 
-        if not response.ok:
-            raise Exception(f"GitHub API error: {response.status_code} {response.text}")
+        N = len(ci)
 
-        data = response.json()
-
-        ci = {}
-        total_contributions = 0
-
-        for contributor in data:
-            username = contributor['author']['login']
-            contributions = contributor['total']
-            ci[username] = contributions
-            total_contributions += contributions
-
-        num_contributors = len(ci)
-
-        return num_contributors, total_contributions, ci
-
-
+        return N, total, ci
+    
     # -------------------
     # Computes the bus metric using contributor information
     # -------------------
-    def compute(self, url: str) -> Tuple[float, float]:
+    def compute(self, url: str) -> Tuple[float, int]:
+        """
+            Computes the bus factor metric for a given HuggingFace model URL.
 
-        start: float = time.time()
+            Args:
+                url: Hugging Face model URL
 
-        N: int # Number of contributors
-        C: int # Total contributions
-        ci: Dict[str, int] # Contributions per contributor
-        N, C, ci = self.get_github_contributor_stats(url)
+            Returns tuple:
+                bus_factor: A float between 0 and 1 representing the bus factor
+                latency: Time taken to compute the metric in milliseconds
+        """
+        if url is None:
+            return 0, 0
+
+        start = time.time()
+        N, C, ci = self.get_hf_contributor_stats(url)
 
         if N <= 1 or C == 0:
-            return 0.0, (time.time() - start) * 1000
+            end = time.time()
+            latency = (end - start) * 1000
+            latency = int(latency)
+            return 0.0, latency
 
-        sum_of_squared_factors: float = 0.0
+        # Calculate entropy based bus factor
+        # previous implementation penalized heavy contributors too much
+        # Entropy based is more balanced as it considers distribution of contributions
+        # Implementation formula was inspired by: an llm
+        entropy = 0.0
         for contributions in ci.values():
-            sum_of_squared_factors += (contributions / C) ** 2
+            p = contributions / C
+            entropy -= p * math.log2(p)
 
-        bus_factor: float = (N * sum_of_squared_factors) / (N - 1)
+        max_entropy = math.log2(N)
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
 
-        end: float = time.time()
-        latency: float = (end - start) * 1000
+        latency = int((time.time() - start) * 1000)
 
-        print(f"Contributors: {N}, Total Contributions: {C}, Latency: {latency:.2f} ms")
-        return bus_factor, latency
-
+        return normalized_entropy, latency
 
 # -------------------
 # Example code snippet that shows how to use the bus metric
 # -------------------
 if __name__ == "__main__":
-    url = "https://github.com/google-research/bert"
+    url = "https://huggingface.co/google-bert/bert-base-uncased"
     metric = BusMetric()
     bus_factor, latency = metric.compute(url)
     
     if bus_factor is not None:
-        print(f"Bus factor for {url}: {bus_factor:.4f}, with latency of {latency:.2f} ms")
+        print(f"Bus factor for {url}: {bus_factor:.4f}, with latency of {latency} ms")
     else:
         print(f"Could not compute bus factor for {url}")
