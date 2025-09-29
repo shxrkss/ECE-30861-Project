@@ -37,8 +37,8 @@ def main():
     # if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
     #     print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
     #     sys.exit(1)
-    # setup_logging()
-    # logging.critical("Starting Run")
+    setup_logging()
+    logging.critical("Starting Run")
     
     # UNCOMMENT THIS WHEN SUBMITTING
     # github_token = os.getenv("GITHUB_TOKEN")
@@ -94,7 +94,7 @@ def main():
     else:
         from orchestrator import run_all_metrics
         
-        #logging.debug("Running program")
+        logging.info("Running program")
         try:
             model_info = read_url_file(arg)
         except FileNotFoundError:
@@ -122,6 +122,7 @@ def main():
                 print(line)
                 f.write(line + '\n')
         
+        logging.critical("Finished code, JSON created, exiting.")
         sys.exit(0)
 
     # log_file_path = os.getenv("LOG_FILE_PATH")
