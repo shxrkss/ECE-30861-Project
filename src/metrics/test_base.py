@@ -1,5 +1,5 @@
 import pytest
-from metrics.base import MetricBase
+from src.metrics.base import MetricBase
 
 def test_initialization():
     metric = MetricBase("TestMetric")

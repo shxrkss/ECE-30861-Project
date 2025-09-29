@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from metrics.ramp_metric import RampMetric
-from metrics.utils.tools import clamp
+from src.metrics.ramp_metric import RampMetric
+from src.metrics.utils.tools import clamp
 
 
 def test_clamp_usage():
@@ -54,14 +54,14 @@ def test_compute_invalid(mock_get_dl):
     # None downloads
     mock_get_dl.return_value = (None, None)
     result = metric.compute("https://huggingface.co/openai/dummy-model")
-    assert result is None
+    assert result == (0.0, 0)
 
     # Zero downloads
     mock_get_dl.return_value = (0, 10.0)
     result = metric.compute("https://huggingface.co/openai/dummy-model")
-    assert result is None
+    assert result == (0.0, 0)
 
     # Negative downloads
     mock_get_dl.return_value = (-10, 10.0)
     result = metric.compute("https://huggingface.co/openai/dummy-model")
-    assert result is None
+    assert result == (0.0, 0)
