@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from orchestrator import run_all_metrics
+from src.orchestrator import run_all_metrics
 
 @patch("src.metrics.bus_metric.BusMetric")
 @patch("src.metrics.code_quality_metric.CodeQualityMetric")

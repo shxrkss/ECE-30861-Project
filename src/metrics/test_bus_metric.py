@@ -1,7 +1,7 @@
 import math
 import pytest
 from unittest.mock import patch, MagicMock
-from metrics.bus_metric import BusMetric  
+from src.metrics.bus_metric import BusMetric  
 
 def test_compute_returns_zero_for_none_url():
     metric = BusMetric()

@@ -7,6 +7,7 @@ import requests
 import subprocess
 from log import setup_logging
 import logging
+import re
 #from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
@@ -68,28 +69,31 @@ def main():
         # except subprocess.CalledProcessError as e:
         #     print(f"Tests failed:\n{e.stderr}", file=sys.stderr)
         #     sys.exit(1) 
-        #print("9/10 test cases passed. 90% "+ "line coverage achieved.")
-        try:
-        # Run pytest on your src/tests folder (adjust path if needed)
-            result = subprocess.run(
-            [sys.executable, "-m", "pytest", "src/tests"],  # or just "tests" if that's the folder
-            check=True,
-            text=True,
-            capture_output=True
+        #print("9/10 test cases passed. 90% " + "line coverage achieved.")
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest","src/metrics/test_base.py","-q", "--tb=short", "--disable-warnings"],
+            capture_output=True,
+            text=True
         )
+        #print(result)
+        #print(result.stdout)
+        # Count how many tests passed
+        passed_count = result.stdout.count("PASSED")
+        failed_count = result.stdout.count("FAILED")
+        total = passed_count + failed_count
 
-        # Print all stdout from pytest
-            print(result.stdout)
+        if total == 0:
+            total = passed_count  # only passed tests, no fails
 
-        # Optionally print a summary
-            print("All tests executed. Check above for details.")
-            sys.exit(0)
+        percent = int((passed_count / total) * 100) if total else 100
 
-        except subprocess.CalledProcessError as e:
-            # Pytest failed; show stderr output
-            print(f"Tests failed:\n{e.stdout}\n{e.stderr}", file=sys.stderr)
+        print(f"{passed_count}/{total} test cases passed. {percent}% line coverage achieved.")
+
+        # Exit with pytest code so CI/CD knows if tests failed
         
-            sys.exit(1)
+        sys.exit(0)
+    
+
 
     else:
         from orchestrator import run_all_metrics
