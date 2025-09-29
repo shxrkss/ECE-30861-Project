@@ -6,7 +6,11 @@ from urllib.parse import urlparse
 import os
 import time
 from huggingface_hub import HfApi
-from metrics.base import MetricBase
+from metrics.base import MetricBase ##################################################333 metrics.base
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import logging
+from log import setup_logging
 
 # Common license aliases -> canonical SPDX-ish keys (extend as needed)
 LICENSE_NORMALIZATION = {
@@ -200,29 +204,38 @@ class LicenseMetric(MetricBase):
         Returns 1.0 if the model license is in `allowed` (after normalization), else 0.0.
         `allowed` should contain normalized keys (e.g., {'mit','apache-2.0','bsd-3-clause', ...}).
         """
+        setup_logging()
+
         start = time.time()
+        logging.critical("Starting License Metric")
 
         repo_id = self.url_to_repo_id(url)
         info = self.get_model_info(repo_id, token=hf_token)
 
         # 1) metadata path
         norm = self.extract_from_metadata(info)
+        logging.info("Extracting metadata")
 
         # 2) fallback to README
         if not norm:
             readme = self.get_readme_text(repo_id, token=hf_token)
             norm = self.extract_from_readme(readme)
+        logging.info("Used README instead")
 
         # If still unknown, treat as not permitted
         if not norm:
             end = time.time()
             latency = (end - start) * 1000
             latency = int(latency)
+            logging.critical("Treating license as not permitted") # info
+            logging.critical("Finished License Metric, with latency")
             return 0.0, latency
         
         end = time.time()
         latency = (end - start) * 1000
         latency = int(latency)
+
+        logging.critical("Finished License Metric, with latency")
 
         if norm in allowed:
             return 1.0, latency

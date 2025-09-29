@@ -1,4 +1,4 @@
-from metrics.base import MetricBase
+from base import MetricBase
 from huggingface_hub import snapshot_download
 from typing import Tuple, Optional
 from urllib.parse import urlparse
@@ -9,6 +9,9 @@ import tempfile
 import subprocess
 import glob
 import contextlib
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import logging
+from log import setup_logging
 
 class CodeQualityMetric(MetricBase):
     def __init__(self) -> None:
@@ -26,11 +29,15 @@ class CodeQualityMetric(MetricBase):
                 - A normalized score between 0.0 and 1.0 (higher is better)
                 - Latency in milliseconds taken to compute the metric
         """
+        setup_logging()
+
         start = time.time()
+        logging.critical("Starting Code Quality Metric")
 
         repo_url = code_url or model_url
         if not repo_url:
             print("No code or model URL provided.", file=sys.stderr)
+            logging.critical("Unable to find URL")
             return 0.0, int((time.time() - start) * 1000)
 
         # Determine clone URL
@@ -47,7 +54,7 @@ class CodeQualityMetric(MetricBase):
         file_count = 0
         total_lines = 0
 
-
+        logging.info("Accessing code")
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 if "github.com" in host:
@@ -104,6 +111,7 @@ class CodeQualityMetric(MetricBase):
                     print(f"Warning: Error linting {filepath}: {e}", file=sys.stderr)
 
         # Normalize score: 0 violations = 1.0, 20+ violations per 100 lines = 0.0
+        logging.info("Normalizing score")
         if file_count == 0:
             normalized_score = 0.0 # if no code, no score
         else:
@@ -112,6 +120,8 @@ class CodeQualityMetric(MetricBase):
             normalized_score = max(0.0, 1.0 - penalty)
 
         latency = int((time.time() - start) * 1000)
+        logging.critical("Finished Code Quality Metric, with latency")
+
         return round(normalized_score, 2), latency
 
     def is_applicable(self, code_url) -> bool:
