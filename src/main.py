@@ -68,8 +68,28 @@ def main():
         # except subprocess.CalledProcessError as e:
         #     print(f"Tests failed:\n{e.stderr}", file=sys.stderr)
         #     sys.exit(1) 
-        print("9/10 test cases passed. 90% "+ "line coverage achieved.")
-        sys.exit(0)
+        #print("9/10 test cases passed. 90% "+ "line coverage achieved.")
+        try:
+        # Run pytest on your src/tests folder (adjust path if needed)
+            result = subprocess.run(
+            [sys.executable, "-m", "pytest", "src/tests"],  # or just "tests" if that's the folder
+            check=True,
+            text=True,
+            capture_output=True
+        )
+
+        # Print all stdout from pytest
+            print(result.stdout)
+
+        # Optionally print a summary
+            print("All tests executed. Check above for details.")
+            sys.exit(0)
+
+        except subprocess.CalledProcessError as e:
+            # Pytest failed; show stderr output
+            print(f"Tests failed:\n{e.stdout}\n{e.stderr}", file=sys.stderr)
+        
+            sys.exit(1)
 
     else:
         from orchestrator import run_all_metrics
