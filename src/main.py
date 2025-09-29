@@ -5,7 +5,8 @@ from pathlib import Path
 from cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
-#from log import *
+from log import setup_logging
+import logging
 #from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
@@ -30,12 +31,14 @@ def usage():
     sys.exit(1)
 
 def main():    
-    ##log_file_path = os.getenv("LOG_FILE_PATH")
-    #setup_logging()
-    # Check if the directory exists and is writable
-    ##log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-         
-    #logging.critical("Starting Run")
+    # log_file_path = os.getenv("LOG_FILE_PATH")
+    # # Check if the directory exists and is writable
+    # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    # if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
+    #     print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
+    #     sys.exit(1)
+    # setup_logging()
+    # logging.critical("Starting Run")
     
     # UNCOMMENT THIS WHEN SUBMITTING
     # github_token = os.getenv("GITHUB_TOKEN")
@@ -45,8 +48,8 @@ def main():
     #     sys.exit(1)
 
     if len(sys.argv) != 2:
+        logging.critical("Error in usage, exiting.")
         usage()
-        # logging.critical("Error in usage, exiting.")
     
     arg: str = sys.argv[1]
     
@@ -101,15 +104,15 @@ def main():
         
         sys.exit(0)
 
-    log_file_path = os.getenv("LOG_FILE_PATH")
-            # if log_file_path:
-            #     print(f"Log file available at: {log_file_path}")
-            #     sys.exit(1)
+    # log_file_path = os.getenv("LOG_FILE_PATH")
+    #         # if log_file_path:
+    #         #     print(f"Log file available at: {log_file_path}")
+    #         #     sys.exit(1)
 
-    log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
-        print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
-        sys.exit(1)
+    # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
+    # if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
+    #     print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
+    #     sys.exit(1)
 
 if __name__ == "__main__":
     main()

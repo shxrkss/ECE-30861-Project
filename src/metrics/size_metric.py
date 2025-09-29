@@ -1,9 +1,18 @@
 # size_metric.py  (REPLACEMENT)
 from __future__ import annotations
 import math, re
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from urllib.parse import urlparse
 import os
+import sys
+import time
+import warnings
+import contextlib
+
+# Silence warnings and stderr
+warnings.filterwarnings("ignore")
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+sys.stderr = open(os.devnull, "w")
 
 from huggingface_hub import HfApi
 from transformers import AutoConfig, AutoModel
@@ -96,7 +105,8 @@ def _get_params_from_config(repo_id: str, token: Optional[str] = None) -> int:
     """
     cfg = AutoConfig.from_pretrained(repo_id, token=token)
     with init_empty_weights():
-        model = AutoModel.from_config(cfg)
+        with contextlib.redirect_stdout(open(os.devnull, "w")):
+            model = AutoModel.from_config(cfg)
     return int(sum(p.numel() for p in model.parameters()))
 
 def _memory_with_overhead(params: float, precision: str, overhead: float) -> float:
@@ -145,11 +155,14 @@ class SizeMetric(MetricBase):
         return float(params)
 
     def compute(self, url: str, hf_token: Optional[str] = None,
-                profiles: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, float]:
+                profiles: Optional[Dict[str, Dict[str, Any]]] = None) -> Tuple[float, float, float, float, int]:
         """
         Returns dict of device -> score in [0,1].
         Optionally override device profiles via `profiles`.
         """
+
+        start = time.time()
+
         repo_id = _url_to_repo_id(url)
         params = self._get_params(repo_id, hf_token=hf_token)
         profs = profiles or DEFAULT_PROFILES
@@ -165,7 +178,16 @@ class SizeMetric(MetricBase):
             penalty = _throughput_penalty(params, comfort)
             results[device] = clamp(base * penalty)
 
-        return results
+        latency = int((time.time() - start) * 1000) 
+
+        return (
+            results.get("raspberry_pi", 0.0),
+            results.get("jetson_nano", 0.0),
+            results.get("desktop_pc", 0.0),
+            results.get("aws_server", 0.0),
+            latency
+        )
+
 
 if __name__ == "__main__":
     # "Overhead factor" is a simple multiplier that inflates pure weight memory (params × bytes/param) 
@@ -178,10 +200,8 @@ if __name__ == "__main__":
     ]
     for u in urls:
         try:
-            scores = metric.compute(u, hf_token=os.getenv("HF_TOKEN"))
-            print(u)
-            for k, v in scores.items():
-                print(f"  {k:13s} -> {v:.2f}")
+            scores_1, scores_2, scores_3, scores_4, latency = metric.compute(u, hf_token=os.getenv("HF_TOKEN"))
+            print(scores_1, scores_2, scores_3, scores_4, latency)
         except Exception as e:
             print("Error:", u, e)
 
