@@ -1,7 +1,7 @@
-from metrics.base import MetricBase
 import time
 import requests
 from typing import Tuple
+from metrics.base import MetricBase
 from metrics.utils.huggingface_api import extract_model_or_dataset_id
 from metrics.utils.tools import clamp
 from typing import Optional, Dict, Any

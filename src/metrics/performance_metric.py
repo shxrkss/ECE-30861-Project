@@ -323,6 +323,33 @@ class PerformanceClaimMetric(MetricBase):
         evidence = self.score_evidence(signals)
         confirmation = self.score_confirmation(structured_claims, signals)
 
+         # --- DEBUG PRINTS START ---
+        print(f"\n--- Debugging {repo_id} ---")
+        print(f"Structured Claims Found: {len(structured_claims)}")
+        if structured_claims:
+            print(f"  Sample Structured: {structured_claims[0]}")
+        
+        print(f"Unstructured Claims Found: {len(unstructured_claims)}")
+        if unstructured_claims:
+            print(f"  Sample Unstructured: {unstructured_claims[0]}")
+            
+        print(f"Evidence Signals: {signals}")
+
+        # Subscores
+        presence = self.score_presence(structured_claims, unstructured_claims)
+        detail = self.score_detail(structured_claims, unstructured_claims)
+        evidence = self.score_evidence(signals)
+        confirmation = self.score_confirmation(structured_claims, signals)
+        
+        print("-" * 25)
+        print(f"Sub-Scores:")
+        print(f"  Presence Score: {presence:.3f} (Weight: {self.w_presence:.2f})")
+        print(f"  Detail Score: {detail:.3f} (Weight: {self.w_detail:.2f})")
+        print(f"  Evidence Score: {evidence:.3f} (Weight: {self.w_evidence:.2f})")
+        print(f"  Confirmation Score: {confirmation:.3f} (Weight: {self.w_confirmation:.2f})")
+        print("-" * 25)
+        # --- DEBUG PRINTS END ---
+
         score = (
             self.w_presence * presence +
             self.w_detail * detail +
