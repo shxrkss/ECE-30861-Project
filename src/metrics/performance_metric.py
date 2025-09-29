@@ -6,7 +6,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from urllib.parse import urlparse
 
 from huggingface_hub import HfApi
-from base import MetricBase
+from metrics.base import MetricBase
 from utils.tools import clamp
 
 # --- Heuristics ---

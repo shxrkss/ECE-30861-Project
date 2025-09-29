@@ -26,7 +26,7 @@ def validate_github_token(token: str) -> bool:
 
 
 def usage():
-    print("Inorrect Usage -> Try: ./run <install|test|url_file>", file=sys.stderr)
+    print("Incorrect Usage -> Try: ./run <install|test|url_file>", file=sys.stderr)
     sys.exit(1)
 
 def main():    

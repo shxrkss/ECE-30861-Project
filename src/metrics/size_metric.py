@@ -8,8 +8,8 @@ import os
 from huggingface_hub import HfApi
 from transformers import AutoConfig, AutoModel
 from accelerate import init_empty_weights  # avoids allocating weights
-from base import MetricBase
-from utils.tools import clamp
+from metrics.base import MetricBase
+from metrics.utils.tools import clamp
 
 # -------------------
 # Helpers / constants
