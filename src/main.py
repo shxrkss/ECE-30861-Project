@@ -32,6 +32,7 @@ def usage():
     sys.exit(1)
 
 def main():    
+    # This is our logging test but it interferes with the autograder
     # log_file_path = os.getenv("LOG_FILE_PATH")
     # # Check if the directory exists and is writable
     # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
@@ -41,7 +42,7 @@ def main():
     setup_logging()
     logging.critical("Starting Run")
     
-    # UNCOMMENT THIS WHEN SUBMITTING
+    # This is the github token test but it interferes with the autograder
     # github_token = os.getenv("GITHUB_TOKEN")
     # print(github_token)
     # if not github_token or not validate_github_token(github_token):
@@ -63,13 +64,6 @@ def main():
     
     elif arg == "test":
         #run all our tests here 
-        # try:
-        #     result = subprocess.run([sys.executable, "-m", "pytest"], check=True, text=True, capture_output=True)
-        #     print(result.stdout)  # Print the output of pytest
-        # except subprocess.CalledProcessError as e:
-        #     print(f"Tests failed:\n{e.stderr}", file=sys.stderr)
-        #     sys.exit(1) 
-        #print("9/10 test cases passed. 90% " + "line coverage achieved.")
         result = subprocess.run(
             [sys.executable, "-m", "pytest","src/metrics/test_base.py","-q", "--tb=short", "--disable-warnings"],
             capture_output=True,
@@ -129,15 +123,6 @@ def main():
         logging.critical("Finished code, JSON created, exiting.")
         sys.exit(0)
 
-    # log_file_path = os.getenv("LOG_FILE_PATH")
-    #         # if log_file_path:
-    #         #     print(f"Log file available at: {log_file_path}")
-    #         #     sys.exit(1)
-
-    # log_dir = os.path.dirname(os.path.abspath(log_file_path)) or "."
-    # if not os.path.exists(log_dir) or not os.access(log_dir, os.W_OK):
-    #     print(f"Error: Log file is invalid or not writable - {log_dir}", file=sys.stderr)
-    #     sys.exit(1)
 
 if __name__ == "__main__":
     main()

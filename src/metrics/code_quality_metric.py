@@ -62,6 +62,7 @@ class CodeQualityMetric(MetricBase):
         with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 if "github.com" in host:
+                    # Clone GitHub repo (shallow clone for speed)
                     clone_url = f"https://github.com/{owner}/{repo}.git"
                     subprocess.run(
                         ["git", "clone", "--depth", "1", clone_url, tmpdir],
@@ -71,6 +72,7 @@ class CodeQualityMetric(MetricBase):
                         timeout=30
                     )
                 elif "huggingface.co" in host:
+                    # Download HuggingFace model repo snapshot 
                     with contextlib.redirect_stdout(open(os.devnull, "w")), contextlib.redirect_stderr(open(os.devnull, "w")):
                         snapshot_download(
                             repo_id=f"{owner}/{repo}",
@@ -79,12 +81,14 @@ class CodeQualityMetric(MetricBase):
                             ignore_patterns=["*.bin", "*.pt", "*.onnx", "*.jpg", "*.png", "*.pdf"]
                         )
                 else:
+                    # If host is not supported, exit
                     print(f"Unsupported host: {host}", file=sys.stderr)
                     return 0.0, int((time.time() - start) * 1000)
             except Exception as e:
                 print(f"Error: {e}", file=sys.stderr)
                 return 0.0, int((time.time() - start) * 1000)
             
+            # Adjust repo_root if extracted repo has a single top-level folder
             repo_root = tmpdir
             contents = os.listdir(tmpdir)
             if len(contents) == 1 and os.path.isdir(os.path.join(tmpdir, contents[0])):

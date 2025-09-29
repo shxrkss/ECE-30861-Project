@@ -3,14 +3,10 @@ from pathlib import Path
 import subprocess
 import os
 
-# -----------------------------------------------------------------------------------
-# IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
-# -----------------------------------------------------------------------------------
-
-
 def install_requirements(req_path: Path = None) -> int:
     """
     Installs dependencies from requirements.txt using pip.
+    Args: req_path (Path): Path to the requirements.txt file.
     Returns the pip exit code (0 if success).
     """
     
@@ -20,6 +16,7 @@ def install_requirements(req_path: Path = None) -> int:
 
     print(f"Installing dependencies from {req_path} using {sys.executable} -m pip ...")
     try:
+        # Run pip install command with subprocess
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "-r", str(req_path)],
             check=True
@@ -32,6 +29,7 @@ def install_requirements(req_path: Path = None) -> int:
         return e.returncode
     
     except Exception as e:
+        # Any other unexpected error during install
         print(f"Unexpected error during install: {e}", file=sys.stderr)
         return 1
 

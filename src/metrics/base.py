@@ -1,3 +1,6 @@
+#This is the base class for all metrics.
+# Use this when creating new metrics in order to ensure a consistent interface.
+
 class MetricBase():
     def __init__(self, name: str) -> None:
         self.name = name

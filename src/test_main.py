@@ -21,24 +21,6 @@ def test_no_arguments(capsys):
                    "Inorrect Usage -> Try: ./run <install|test|url_file>" in captured.err
 
 
-# def test_install_dependencies_success(capsys):
-#     with patch.object(sys, 'argv', ['main.py', 'install']):
-#         with patch('src.main.install_requirements', return_value=0):
-#             with pytest.raises(SystemExit) as e:
-#                 main_module.main()
-#             assert e.value.code == 0
-#             captured = capsys.readouterr()
-#             assert "All dependencies installed successfully." in captured.out
-
-
-# def test_install_dependencies_failure(capsys):
-#     with patch.object(sys, 'argv', ['main.py', 'install']):
-#         with patch('src.main.install_requirements', return_value=1):
-#             with pytest.raises(SystemExit) as e:
-#                 main_module.main()
-#             assert e.value.code == 1
-#             captured = capsys.readouterr()
-#             assert "Error installing dependencies" in captured.err
 
 
 def test_file_not_found(capsys):
