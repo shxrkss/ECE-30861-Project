@@ -1,4 +1,4 @@
-# NOTE: If testing this file directly, ensure to add "src." before "metrics.base"
+# NOTE: If testing this file directly, have "from base" but use "from metrics.base" normally
 from metrics.base import MetricBase
 from huggingface_hub import HfApi
 from typing import Dict, Tuple
@@ -6,6 +6,10 @@ import time
 from urllib.parse import urlparse
 import math
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import logging
+from log import setup_logging
 
 # THIS METRIC HAS BEEN COMPLETED
 # if needed, can implement huggingface api token with: HF_API_TOKEN
@@ -71,10 +75,13 @@ class BusMetric(MetricBase):
                 bus_factor: A float between 0 and 1 representing the bus factor
                 latency: Time taken to compute the metric in milliseconds
         """
+        setup_logging()
+
         if url is None:
             return 0, 0
 
         start = time.time()
+        logging.critical("Starting Bus Metric")
         N, C, ci = self.get_hf_contributor_stats(url)
 
         if N <= 1 or C == 0:
@@ -82,6 +89,7 @@ class BusMetric(MetricBase):
             latency = (end - start) * 1000
             latency = int(latency)
             return 0.0, latency
+        logging.info("Accessed API")
 
         # Calculate entropy based bus factor
         # previous implementation penalized heavy contributors too much
@@ -96,6 +104,7 @@ class BusMetric(MetricBase):
         normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
 
         latency = int((time.time() - start) * 1000)
+        logging.critical("Finished Bus Metric, with latency")
 
         return normalized_entropy, latency
 
