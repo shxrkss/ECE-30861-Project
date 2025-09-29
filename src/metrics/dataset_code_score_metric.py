@@ -4,10 +4,13 @@ import os
 from typing import Optional, Tuple
 from urllib.parse import urlparse
 
-from base import MetricBase
-from utils.tools import clamp
-from dataset_quality_metric import DataQualityMetric
-from code_quality_metric import CodeQualityMetric
+from metrics.base import MetricBase
+from metrics.utils.tools import clamp
+from metrics.dataset_quality_metric import DataQualityMetric
+from metrics.code_quality_metric import CodeQualityMetric
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 DATA_WEIGHT = 0.6
 CODE_WEIGHT = 0.4

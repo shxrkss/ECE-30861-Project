@@ -21,6 +21,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     from metrics.license_metric import LicenseMetric
     from metrics.ramp_metric import RampMetric
     # from metrics.size_metric import SizeMetric
+    from metrics.performance_metric import PerformanceClaimMetricLLM
 
     code_url, dataset_url, model_url = repo_info
 
@@ -30,6 +31,7 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     license_score, license_latency = None, None
     ramp_score, ramp_latency = None, None
     # size_rpi, size_jetson, size_pc, size_aws, size_latency = None, None, None, None, None
+    performance_score, performance_latency = None, None
 
     def run_bus():
         nonlocal bus_score, bus_latency
@@ -56,6 +58,10 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     # def run_size():
     #     nonlocal size_rpi, size_jetson, size_pc, size_aws, size_latency
     #     size_rpi, size_jetson, size_pc, size_aws, size_latency = SizeMetric().compute(model_url, hf_token=None)
+
+    def run_performance():
+        nonlocal performance_score, performance_latency
+        performance_score, performance_latency = PerformanceClaimMetricLLM(debug=False).compute(model_url, hf_token=None)
     
     with ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(run_bus)
@@ -64,20 +70,26 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         executor.submit(run_license)
         executor.submit(run_ramp)
         # executor.submit(run_size)
+        executor.submit(run_performance)
+
+    data_set_code_score = (code_score + data_score) / 2.0
+    data_set_code_latency = (code_latency + data_latency) / 2
 
     end = time.time()
+
+    net_score = (bus_score + code_score + data_score + ramp_score + license_score + performance_score) / 6
     net_latency = (end - start) * 1000
     net_latency = int(net_latency)
 
     return {
-        "net_score": 0.95,
+        "net_score": round(net_score, 2),
         "net_score_latency": net_latency,
         "ramp_up_time": round(ramp_score, 2),
         "ramp_up_time_latency": int(ramp_latency),
         "bus_factor": round(bus_score, 2),
         "bus_factor_latency": int(bus_latency),
-        "performance_claims": 0.92,
-        "performance_claims_latency": 35,
+        "performance_claims": round(performance_score, 2),
+        "performance_claims_latency": int(performance_latency),
         "license": round(license_score, 2),
         "license_latency": license_latency,
         "size_score": {
@@ -94,8 +106,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         #     "aws_server": round(size_aws, 2)
         # },
         # "size_score_latency": int(size_latency),
-        "dataset_and_code_score": 1.00,
-        "dataset_and_code_score_latency": 15,
+        "dataset_and_code_score": round(data_set_code_score, 2),
+        "dataset_and_code_score_latency": int(data_set_code_latency),
         "dataset_quality": round(data_score, 2),
         "dataset_quality_latency": int(data_latency),
         "code_quality": round(code_score, 2),

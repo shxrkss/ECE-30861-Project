@@ -41,11 +41,11 @@ def main():
     logging.critical("Starting Run")
     
     # UNCOMMENT THIS WHEN SUBMITTING
-    # github_token = os.getenv("GITHUB_TOKEN")
-    # print(github_token)
-    # if not github_token or not validate_github_token(github_token):
-    #     print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
-    #     sys.exit(1)
+    github_token = os.getenv("GITHUB_TOKEN")
+    print(github_token)
+    if not github_token or not validate_github_token(github_token):
+        print("Error: Invalid or missing GITHUB_TOKEN environment variable.", file=sys.stderr)
+        sys.exit(1)
 
     if len(sys.argv) != 2:
         logging.critical("Error in usage, exiting.")
