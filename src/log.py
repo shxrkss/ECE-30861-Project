@@ -3,7 +3,7 @@ import logging
 
 def setup_logging():
     log_file = os.getenv("LOG_FILE", "logfile.log")
-    log_level = int(os.getenv("LOG_LEVEL", "1"))
+    log_level = int(os.getenv("LOG_LEVEL", "0"))
 
     if log_level == 0:
         level = logging.CRITICAL

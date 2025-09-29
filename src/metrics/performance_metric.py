@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv, find_dotenv
 
 from huggingface_hub import HfApi, ModelCard, hf_hub_download
-from base import MetricBase
-from utils.tools import clamp
+from metrics.base import MetricBase
+from metrics.utils.tools import clamp
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 
@@ -164,7 +164,9 @@ class PerformanceClaimMetricLLM(MetricBase):
         self.debug = debug
         self.last_raw_reply_head = ""
 
-    def compute(self, url: str, hf_token: Optional[str] = None) -> float:
+    def compute(self, url: str, hf_token: Optional[str] = None) -> Tuple[float, int]:
+        start = time.time()
+
         repo_id, repo_type = _url_to_repo(url)
         readme = _get_readme(repo_id, repo_type, hf_token)
         meta   = _metadata_block(repo_id, repo_type, hf_token)
@@ -190,16 +192,29 @@ class PerformanceClaimMetricLLM(MetricBase):
 
         # Prefer model's top-level score; else compute from subscores
         subs = parsed.get("subscores", {})
+        performance_score = None
+
         if "performance_claim_score" in parsed:
             try:
-                return clamp(float(parsed["performance_claim_score"]))
+                performance_score = clamp(float(parsed["performance_claim_score"]))
             except Exception:
                 pass
-        return _weighted_score(subs)
+        
+        if performance_score is None:
+            try:
+                performance_score = _weighted_score(subs)
+            except Exception:
+                performance_score = 0.0  # fallback
+
+
+        end = time.time()
+        latency = int((end - start) * 1000)
+
+        return performance_score, latency
 
     # Optional helper for debugging
     def explain(self, url: str, hf_token: Optional[str] = None) -> Dict[str, Any]:
-        score = self.compute(url, hf_token=hf_token)
+        score, latency = self.compute(url, hf_token=hf_token)
         return {
             "score": round(score,3),
             "raw_reply_head": self.last_raw_reply_head
@@ -215,7 +230,8 @@ if __name__ == "__main__":
     ]
     for u in tests:
         try:
-            s = metric.compute(u, hf_token=os.getenv("HF_TOKEN"))
-            print(f"{u} -> {s:.3f}")
+            s, l = metric.compute(u, hf_token=os.getenv("HF_TOKEN"))
+            print(f"{u} -> {s:.2f}")
+            print(l)
         except Exception as e:
             print("Error:", u, e)

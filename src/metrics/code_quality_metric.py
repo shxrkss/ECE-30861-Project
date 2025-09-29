@@ -1,4 +1,4 @@
-from base import MetricBase
+from metrics.base import MetricBase
 from huggingface_hub import snapshot_download
 from typing import Tuple, Optional
 from urllib.parse import urlparse
@@ -12,6 +12,10 @@ import contextlib
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import logging
 from log import setup_logging
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 class CodeQualityMetric(MetricBase):
     def __init__(self) -> None:
