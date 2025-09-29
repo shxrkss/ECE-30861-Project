@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from huggingface_hub import HfApi
 from metrics.base import MetricBase
-from utils.tools import clamp
+from metrics.utils.tools import clamp
 
 # --- Heuristics ---
 BENCHMARK_KEYWORDS = [
