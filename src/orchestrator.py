@@ -22,7 +22,10 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     from metrics.ramp_metric import RampMetric
     from metrics.size_metric import SizeMetric
     from metrics.performance_metric import PerformanceClaimMetricLLM
-
+    
+    #from metrics.reproducibility_metric import ReproducibilityMetric
+    #from metrics.reviewedness_metric import ReviewednessMetric
+    
     code_url, dataset_url, model_url = repo_info
 
     bus_score, bus_latency = None, None
@@ -33,6 +36,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     size_rpi, size_jetson, size_pc, size_aws, size_latency = None, None, None, None, None
     performance_score, performance_latency = None, None
 
+    #reproducibility_score, reproducibility_latency = None, None
+    #reviewedness_score, reviewedness_latency = None, None
     def run_bus():
         nonlocal bus_score, bus_latency
         bus_score, bus_latency = BusMetric().compute(model_url)
@@ -63,6 +68,14 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         nonlocal performance_score, performance_latency
         performance_score, performance_latency = PerformanceClaimMetricLLM(debug=False).compute(model_url, hf_token=None)
     
+    #def run_reproducibility():
+    #    nonlocal reproducibility_score, reproducibility_latency
+    #    reproducibility_score, reproducibility_latency = ReproducibilityMetric().compute(model_url, hf_token = None)
+
+    #def run_reviewedness():
+    #    nonlocal reviewedness_score, reviewedness_latency
+    #    reviewedness_score, reviewedness_latency = ReviewednessMetric().compute(model_url)
+
     with ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(run_bus)
         executor.submit(run_code)
@@ -71,6 +84,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         executor.submit(run_ramp)
         executor.submit(run_size)
         executor.submit(run_performance)
+        #executor.submit(run_reproducibility)
+        #executor.submit(run_reviewednss)
 
     data_set_code_score = (code_score + data_score) / 2.0
     data_set_code_latency = (code_latency + data_latency) / 2
@@ -112,6 +127,10 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         "dataset_quality_latency": int(data_latency),
         "code_quality": round(code_score, 2),
         "code_quality_latency": int(code_latency)
+        #,"reproducibility": round(reproducibility_score, 2)
+        #,"reproducibility_latency" : int(reproducibility_latency)
+        #,"reviwedness": round(reviwedness_score, 2)
+        #,"reviwedness_latency" : int(reviwedness_latency)
     }
 
 
