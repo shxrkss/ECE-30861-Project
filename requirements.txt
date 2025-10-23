@@ -10,4 +10,7 @@ huggingface_hub
 requests
 python-dotenv
 pylint
-fl
+flake8
+hf_xet
+accelerate
+transformers
