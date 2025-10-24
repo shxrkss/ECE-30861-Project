@@ -1,5 +1,5 @@
 # NOTE: If testing this file directly, have "from base" but use "from metrics.base" normally
-from metrics.base import MetricBase
+from src.metrics.base import MetricBase
 from huggingface_hub import HfApi
 from typing import Dict, Tuple
 import time

@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv, find_dotenv
 
 from huggingface_hub import HfApi, ModelCard, hf_hub_download
-from metrics.base import MetricBase
-from metrics.utils.tools import clamp
+from src.metrics.base import MetricBase
+from src.metrics.utils.tools import clamp
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 

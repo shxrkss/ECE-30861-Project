@@ -5,8 +5,8 @@ from typing import Tuple, Optional, Dict, Any
 from urllib.parse import urlparse
 import os
 
-from metrics.base import MetricBase
-from metrics.utils.tools import clamp
+from src.metrics.base import MetricBase
+from src.metrics.utils.tools import clamp
 
 log = logging.getLogger(__name__)
 

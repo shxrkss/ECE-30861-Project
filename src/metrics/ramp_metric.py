@@ -3,9 +3,9 @@ from urllib.parse import urlparse
 import requests
 import time
 from typing import Tuple
-from metrics.base import MetricBase
-from metrics.utils.huggingface_api import extract_model_or_dataset_id
-from metrics.utils.tools import clamp
+from src.metrics.base import MetricBase
+from src.metrics.utils.huggingface_api import extract_model_or_dataset_id
+from src.metrics.utils.tools import clamp
 
 # THIS METRIC HAS BEEN COMPLETED
 
