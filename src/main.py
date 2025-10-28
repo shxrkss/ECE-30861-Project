@@ -2,17 +2,28 @@ import sys
 import os
 import json
 from pathlib import Path
-from cli_utils import install_requirements, read_url_file
+from src.cli_utils import install_requirements, read_url_file
 import requests
 import subprocess
-from log import setup_logging
+from src.log import setup_logging
 import logging
 import re
+from fastapi import FastAPI
+from src.api.routes_models import router as models_router  # optional, if you have routes
+
 #from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
 # -----------------------------------------------------------------------------------
+
+app = FastAPI(title="Trustworthy Model Registry")
+app.include_router(models_router, prefix="/api")
+
+
+@app.get("/")
+def read_root():
+    return {"status": "running", "message": "Welcome to the Model Registry"}
 
 def validate_github_token(token: str) -> bool:
     """Validate the provided GitHub token by making a simple API request."""

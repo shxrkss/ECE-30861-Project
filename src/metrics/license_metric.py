@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import os
 import time
 from huggingface_hub import HfApi
-from metrics.base import MetricBase ##################################################333 metrics.base
+from src.metrics.base import MetricBase ##################################################333 metrics.base
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import logging

@@ -1,0 +1,94 @@
+import pytest
+from src.metrics.reproducibility_metric import ReproducibilityMetric
+
+# ---------------------------
+# Fixtures and setup
+# ---------------------------
+
+@pytest.fixture
+def metric():
+    """Fixture to initialize ReproducibilityMetric instance."""
+    return ReproducibilityMetric()
+
+# ---------------------------
+# Tests for extract_demo_code
+# ---------------------------
+
+def test_extract_demo_code_no_card(monkeypatch, metric):
+    """Should return empty string if cardData is missing."""
+    def mock_model_info(repo_id):
+        class MockInfo:
+            cardData = None
+        return MockInfo()
+    monkeypatch.setattr(metric.hf, "model_info", mock_model_info)
+
+    assert metric.extract_demo_code("fake/repo") == ""
+
+
+def test_extract_demo_code_with_python_block(monkeypatch, metric):
+    """Should extract code correctly from fenced block."""
+    fake_text = "```python\nprint('hi')\n```"
+    def mock_model_info(repo_id):
+        class MockInfo:
+            cardData = {"text": fake_text}
+        return MockInfo()
+    monkeypatch.setattr(metric.hf, "model_info", mock_model_info)
+
+    code = metric.extract_demo_code("fake/repo")
+    assert "print('hi')" in code
+
+# ---------------------------
+# Tests for try_run_code
+# ---------------------------
+
+def test_try_run_code_success(metric):
+    """Should return 1.0 when code executes successfully."""
+    code = "print('Hello World')"
+    score = metric.try_run_code(code)
+    assert score == 1.0
+
+
+def test_try_run_code_module_not_found(metric):
+    """Should return 0.5 when a recoverable error occurs (e.g., missing import)."""
+    code = "import non_existent_lib"
+    score = metric.try_run_code(code)
+    assert score == 0.5
+
+
+def test_try_run_code_fatal_error(metric):
+    """Should return 0.0 when code raises unrecoverable exception."""
+    code = "raise RuntimeError('fatal')"
+    score = metric.try_run_code(code)
+    assert score == 0.0
+
+
+def test_try_run_code_no_code(metric):
+    """Should return 0.0 when no code is provided."""
+    score = metric.try_run_code("")
+    assert score == 0.0
+
+# ---------------------------
+# Tests for compute
+# ---------------------------
+
+def test_compute_no_code(monkeypatch, metric):
+    """Should assign value 0.0 when no demo code is found."""
+    def mock_extract(repo_id):
+        return ""
+    monkeypatch.setattr(metric, "extract_demo_code", mock_extract)
+
+    score, latency = metric.compute("https://huggingface.co/fake/model")
+    assert score == 0.0
+    assert latency >= 0
+
+
+def test_compute_successful_run(monkeypatch, metric):
+    """Should compute 1.0 reproducibility when code runs cleanly."""
+    def mock_extract(repo_id):
+        return "print('All good')"
+    monkeypatch.setattr(metric, "extract_demo_code", mock_extract)
+    monkeypatch.setattr(metric, "try_run_code", lambda code: 1.0)
+
+    score, latency = metric.compute("https://huggingface.co/fake/model")
+    assert score == 1.0
+    assert latency >= 0

@@ -1,4 +1,4 @@
-from metrics.base import MetricBase
+from src.metrics.base import MetricBase
 from huggingface_hub import snapshot_download
 from typing import Tuple, Optional
 from urllib.parse import urlparse

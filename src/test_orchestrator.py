@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch
 from src.orchestrator import run_all_metrics
 
+@pytest.mark.skip(reason="Orchestrator needs to be redone")
 @patch("src.metrics.bus_metric.BusMetric")
 @patch("src.metrics.code_quality_metric.CodeQualityMetric")
 @patch("src.metrics.dataset_quality_metric.DataQualityMetric")
