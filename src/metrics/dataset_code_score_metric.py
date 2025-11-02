@@ -4,10 +4,10 @@ import os
 from typing import Optional, Tuple
 from urllib.parse import urlparse
 
-from metrics.base import MetricBase
-from metrics.utils.tools import clamp
-from metrics.dataset_quality_metric import DataQualityMetric
-from metrics.code_quality_metric import CodeQualityMetric
+from src.metrics.base import MetricBase
+from src.metrics.utils.tools import clamp
+from src.metrics.dataset_quality_metric import DataQualityMetric
+from src.metrics.code_quality_metric import CodeQualityMetric
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
