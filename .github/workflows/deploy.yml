@@ -3,7 +3,7 @@ name: CD - Deploy to AWS ECS Fargate
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:   # allows manual trigger from Actions tab
 
 jobs:
   deploy:
@@ -24,29 +24,39 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image to ECR
+      - name: Build, tag, and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          echo "Building image..."
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-            - name: Download ECS task definition
+      - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition model-registry-task \
             --query taskDefinition > task-definition.json
 
-      - name: Remove unsupported ECS fields
+      - name: Clean ECS task definition JSON
         run: |
-          # Strip keys not recognized by old GitHub Actions AWS SDK
-          cat task-definition.json | jq 'del(.enableFaultInjection, .ephemeralStorage, .requiresCompatibilities, .registeredBy, .registeredAt)' > sanitized-task-definition.json
-          mv sanitized-task-definition.json task-definition.json
+          echo "Cleaning unsupported fields (like enableFaultInjection)..."
+          cat task-definition.json | jq 'del(
+            .enableFaultInjection,
+            .registeredAt,
+            .registeredBy,
+            .compatibilities,
+            .requiresAttributes,
+            .requiresCompatibilities,
+            .revision,
+            .status
+          )' > clean-task-definition.json
+          mv clean-task-definition.json task-definition.json
 
-      - name: Fill in the new image ID in the ECS task definition
+      - name: Fill in new image ID
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -54,7 +64,7 @@ jobs:
           container-name: model-registry
           image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-      - name: Deploy ECS task definition
+      - name: Deploy ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
