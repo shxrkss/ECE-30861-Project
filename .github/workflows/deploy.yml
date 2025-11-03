@@ -34,11 +34,17 @@ jobs:
           docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Download ECS task definition
+            - name: Download ECS task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition model-registry-task \
             --query taskDefinition > task-definition.json
+
+      - name: Remove unsupported ECS fields
+        run: |
+          # Strip keys not recognized by old GitHub Actions AWS SDK
+          cat task-definition.json | jq 'del(.enableFaultInjection, .ephemeralStorage, .requiresCompatibilities, .registeredBy, .registeredAt)' > sanitized-task-definition.json
+          mv sanitized-task-definition.json task-definition.json
 
       - name: Fill in the new image ID in the ECS task definition
         id: task-def
