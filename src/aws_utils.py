@@ -26,3 +26,13 @@ def upload_file_to_s3(file_path: str, s3_key: str) -> bool:
     except ClientError as e:
         logger.error(f"S3 upload failed: {e}")
         return False
+    
+def download_file_from_s3(s3_key: str, local_path: str) -> bool:
+    """Download an S3 object to a local file path."""
+    try:
+        s3_client.download_file(S3_BUCKET, s3_key, local_path)
+        logger.info(f"Downloaded s3://{S3_BUCKET}/{s3_key} to {local_path}")
+        return True
+    except ClientError as e:
+        logger.error(f"S3 download failed: {e}")
+        return False
