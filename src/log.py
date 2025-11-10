@@ -1,6 +1,8 @@
 import os
 import logging
 
+
+
 def setup_logging():
     log_file = os.getenv("LOG_FILE", "logfile.log")
     log_level = int(os.getenv("LOG_LEVEL", "0"))
@@ -18,7 +20,8 @@ def setup_logging():
         filename=log_file,
         level=level,
         format='%(asctime)s - %(levelname)s - %(message)s',
-        filemode='w'
+        filemode='w',
+        handlers=[logging.FileHandler("logs/metrics.log"), logging.StreamHandler()]
     )
 
 
