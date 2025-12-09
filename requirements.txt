@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+httpx
 boto3
 aws-xray-sdk
 numpy
