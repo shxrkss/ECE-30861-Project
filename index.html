@@ -171,7 +171,17 @@
     const saved = localStorage.getItem('apiBase') || '';
     if (saved) apiBaseInput.value = saved;
     $('#saveApi').onclick = ()=>{ localStorage.setItem('apiBase', apiBaseInput.value.trim()); alert('Saved API base.'); };
-    const API = ()=> apiBaseInput.value.trim().replace(/\/+$/,'');
+    const API = () => {
+    let base = apiBaseInput.value.trim();
+
+    // Default backend URL = same host, port 8000
+      if (!base) {
+        const loc = window.location;
+        base = `${loc.protocol}//${loc.hostname}:8080`;
+      }
+
+    return base.replace(/\/+$/, '');
+    };
 
     const views = { home:$('#view-home'), health:$('#view-health'), models:$('#view-models'), upload:$('#view-upload') };
     function show(id){ Object.values(views).forEach(v=>v.classList.add('hidden')); views[id].classList.remove('hidden'); if(id==='home') loadHome(); if(id==='health') loadHealth(); if(id==='models') loadModels(); }
