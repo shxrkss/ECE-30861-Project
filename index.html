@@ -172,15 +172,12 @@
     if (saved) apiBaseInput.value = saved;
     $('#saveApi').onclick = ()=>{ localStorage.setItem('apiBase', apiBaseInput.value.trim()); alert('Saved API base.'); };
     const API = () => {
-    let base = apiBaseInput.value.trim();
+      const manual = apiBaseInput.value.trim();
+      if (manual) return manual.replace(/\/+$/, '');
 
-    // Default backend URL = same host, port 8000
-      if (!base) {
-        const loc = window.location;
-        base = `${loc.protocol}//${loc.hostname}:8080`;
-      }
-
-    return base.replace(/\/+$/, '');
+      // Fallback: use same host, port 8080 for backend
+      const loc = window.location;
+      return `${loc.protocol}//${loc.hostname}:8080`;
     };
 
     const views = { home:$('#view-home'), health:$('#view-health'), models:$('#view-models'), upload:$('#view-upload') };
