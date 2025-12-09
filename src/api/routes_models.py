@@ -1,48 +1,141 @@
-from src.aws_utils import upload_file_to_s3, download_file_from_s3
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from fastapi.responses import JSONResponse
 from botocore.exceptions import ClientError
-from src.aws_utils import s3_client, S3_BUCKET
-import os
-import tempfile
-import logging
+from src.services.auth import verify_api_key
+from src.services.rate_limit import rate_limiter, enforce_rate_limit
+from src.services.s3_service import (
+    upload_file_to_s3,
+    get_s3_object_checksum,
+    generate_presigned_download_url,
+    write_manifest,
+    read_manifest,
+)
+import os, tempfile, hashlib, zipfile, logging, time
+from datetime import datetime
 
-router = APIRouter()
+logger = logging.getLogger("trustworthy-registry")
 
-@router.post("/upload") 
-async def upload_model(file: UploadFile = File(...)):
-    """Upload zipped model file to S3."""
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(await file.read())
-        tmp.flush()
-        success = upload_file_to_s3(tmp.name, f"models/{file.filename}")
-    return {"success": success, "filename": file.filename}
+router = APIRouter(
+    dependencies=[Depends(enforce_rate_limit)]
+)
+
+# Limits
+ALLOWED_MIME = {"application/zip", "application/x-zip-compressed"}
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", 50 * 1024 * 1024))  # 50MB
+
+
+def compute_sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(64 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def validate_zip_safely(zip_path: str):
+    try:
+        with zipfile.ZipFile(zip_path, "r") as z:
+            for entry in z.namelist():
+
+                # Prevent traversal attacks
+                if entry.startswith("/") or ".." in entry.replace("\\", "/"):
+                    raise HTTPException(status_code=400, detail="Invalid file paths in ZIP")
+
+                # Block risky file types
+                if entry.lower().endswith((".exe", ".dll", ".sh", ".py", ".bat")):
+                    raise HTTPException(status_code=400, detail="Archive contains disallowed types")
+
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="Not a valid ZIP")
 
 @router.get("/download/{filename}")
-def download_model(filename: str):
-    """Download a model file from S3."""
-    local_dir = tempfile.gettempdir()
-    local_path = os.path.join(local_dir, filename)
+def download_model(filename: str, user_info: dict = Depends(verify_api_key)):
+    user_id = user_info.get("user", "unknown")
     s3_key = f"models/{filename}"
+    # read manifest
+    manifest = read_manifest(s3_key)
+    if not manifest:
+        logger.warning(f"download requested for {s3_key} but manifest missing")
+        raise HTTPException(status_code=404, detail="Model metadata missing or file not found")
+    # verify checksum exists
+    stored_checksum = manifest.get("checksum")
+    if not stored_checksum:
+        raise HTTPException(status_code=404, detail="Model missing checksum")
+    # Optionally compare the metadata checksum with head_object metadata
+    head_chk = get_s3_object_checksum(s3_key)
+    if head_chk and head_chk != stored_checksum:
+        logger.error(f"Checksum mismatch for {s3_key}: manifest={stored_checksum} head={head_chk}")
+        raise HTTPException(status_code=500, detail="Integrity check failed")
 
+    presigned = generate_presigned_download_url(s3_key, expires_in=300)
+    if not presigned:
+        raise HTTPException(status_code=500, detail="Failed to generate presigned URL")
+
+    logger.info(f"download event: user={user_id} filename={filename}")
+    return JSONResponse({"download_url": presigned, "checksum": stored_checksum})
+
+@router.post("/upload")
+async def upload_model(
+    file: UploadFile = File(...),
+    user_info: dict = Depends(verify_api_key)
+):
+    """Upload a secure model ZIP file + generate manifest."""
+
+    # Extract authenticated user
+    user_id = user_info.get("user", "unknown")
+
+    # Apply rate limiting
+    if not rate_limiter.allow(user_id):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
+    # Validate MIME
+    if (
+        file.content_type not in ALLOWED_MIME
+        and not file.filename.lower().endswith(".zip")
+    ):
+        raise HTTPException(status_code=400, detail="Only ZIP files allowed")
+
+    # Save to temp
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp_path = tmp.name
+        contents = await file.read()
+
+        # Validate size
+        if len(contents) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Upload exceeds size limit")
+
+        tmp.write(contents)
+        tmp.flush()
+
+    # ZIP safety check
+    validate_zip_safely(tmp_path)
+
+    # Compute checksum
+    checksum = compute_sha256(tmp_path)
+
+    # Upload to S3
+    s3_key = f"models/{file.filename}"
+    upload_file_to_s3(tmp_path, s3_key, checksum=checksum)
+
+    # Write manifest
+    manifest = {
+        "uploader": user_id,
+        "checksum": checksum,
+        "filename": file.filename,
+        "uploaded_at": datetime.utcnow().isoformat() + "Z",
+        "notes": "manifest auto-generated",
+    }
+    write_manifest(s3_key, manifest)
+
+    # Cleanup temp file
     try:
-        # Try to download file from S3
-        s3_client.download_file(S3_BUCKET, s3_key, local_path)
-    except ClientError as e:
-        # Handle AWS errors cleanly
-        logging.error(f"Download failed: {e}")
-        if e.response["Error"]["Code"] == "404":
-            raise HTTPException(status_code=404, detail="File not found in S3")
-        else:
-            raise HTTPException(status_code=500, detail=str(e))
+        os.remove(tmp_path)
+    except Exception:
+        pass
 
-    # Check local file exists
-    if not os.path.exists(local_path):
-        raise HTTPException(status_code=404, detail="Downloaded file not found on server")
-
-    # Serve the file back to the client
-    return FileResponse(
-        path=local_path,
-        media_type="application/octet-stream",
-        filename=filename
-    )
+    return {
+        "success": True,
+        "filename": file.filename,
+        "checksum": checksum,
+        "manifest": manifest,
+    }

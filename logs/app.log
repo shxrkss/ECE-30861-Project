@@ -1,0 +1,3 @@
+[2025-12-07 13:36:48,975] INFO trustworthy-registry - debug-log endpoint hit | sig=325de6378a0329f1296031dc931447be77a9e98cf93577856be47a416a6dd600
+[2025-12-08 21:27:07,495] WARNING trustworthy-registry - download requested for models/model.zip but manifest missing | sig=b29d6797a034433f6d2e1e82db9c8ee8703ef7b41cc4790e990a988f4700fdf8
+[2025-12-08 21:27:21,450] INFO trustworthy-registry - download event: user=ore filename=pa2_examples | sig=e9d9974cbd4b6e270a7e112cf0cebb0ee3aef4048dd9731280ba15b8be09a57b

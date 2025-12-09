@@ -1,57 +1,117 @@
-import boto3
+# src/services/s3_service.py
 import os
 import re
+import json
+import boto3
+from typing import List, Dict, Optional
 from botocore.exceptions import ClientError
-from typing import List, Dict
+from datetime import datetime
 
-s3_client = boto3.client('s3')
-S3_BUCKET = os.getenv("AWS_BUCKET_NAME", "bss-model-registry")
+S3_BUCKET = os.getenv("AWS_BUCKET_NAME")
+if not S3_BUCKET:
+    raise RuntimeError("AWS_BUCKET_NAME must be set in environment")
 
-def list_s3_models() -> List[Dict]:
-    """List all model files in the S3 bucket under /models."""
-    paginator = s3_client.get_paginator('list_objects_v2')
-    pages = paginator.paginate(Bucket=S3_BUCKET, Prefix="models/")
+s3_client = boto3.client("s3")
 
-    models = []
+def upload_file_to_s3(local_path: str, key: str, checksum: str = None) -> bool:
+    extra_args = {"ServerSideEncryption": "AES256"}
+    if checksum:
+        extra_args["Metadata"] = {"checksum": checksum}
+    try:
+        s3_client.upload_file(local_path, S3_BUCKET, key, ExtraArgs=extra_args)
+        return True
+    except ClientError as e:
+        print(f"S3 upload error → {e}")
+        raise
+
+def get_s3_object_checksum(key: str) -> Optional[str]:
+    try:
+        head = s3_client.head_object(Bucket=S3_BUCKET, Key=key)
+        meta = head.get("Metadata", {})
+        chk = meta.get("checksum")
+        if chk:
+            return chk
+        etag = head.get("ETag", "").strip('"')
+        return etag if etag else None
+    except ClientError:
+        return None
+
+def generate_presigned_download_url(key: str, expires_in: int = 300) -> Optional[str]:
+    try:
+        return s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": S3_BUCKET, "Key": key},
+            ExpiresIn=expires_in,
+        )
+    except ClientError:
+        return None
+
+# -- Manifest support ----------------------------------------------------------------
+def _manifest_key_for_model_key(model_key: str) -> str:
+    # e.g. models/xyz.zip -> models/xyz/manifest.json
+    base = model_key[:-4] if model_key.endswith(".zip") else model_key
+    return f"{base}/manifest.json"
+
+def write_manifest(model_key: str, manifest: Dict) -> bool:
+    """Write manifest JSON next to model and set server-side encryption."""
+    key = _manifest_key_for_model_key(model_key)
+    js = json.dumps(manifest).encode("utf-8")
+    try:
+        s3_client.put_object(Bucket=S3_BUCKET, Key=key, Body=js, ServerSideEncryption="AES256")
+        return True
+    except ClientError as e:
+        print(f"Error writing manifest: {e}")
+        raise
+
+def read_manifest(model_key: str) -> Optional[Dict]:
+    key = _manifest_key_for_model_key(model_key)
+    try:
+        obj = s3_client.get_object(Bucket=S3_BUCKET, Key=key)
+        content = obj["Body"].read().decode("utf-8")
+        return json.loads(content)
+    except ClientError:
+        return None
+
+# The previous listing & search functions (unchanged)
+def list_s3_models(prefix: str = "models/") -> List[Dict]:
+    paginator = s3_client.get_paginator("list_objects_v2")
+    pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=prefix)
+    results = []
     for page in pages:
-        for obj in page.get('Contents', []):
-            if obj['Key'].endswith('.zip'):
-                models.append({
-                    "name": obj['Key'].split('/')[-1].replace(".zip", ""),
-                    "key": obj['Key'],
-                    "size": obj['Size'],
-                    "last_modified": str(obj['LastModified'])
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith(".zip"):
+                results.append({
+                    "name": key.split("/")[-1].replace(".zip", ""),
+                    "key": key,
+                    "size": obj["Size"],
+                    "last_modified": str(obj["LastModified"]),
                 })
-    return models
-
+    return results
 
 def get_model_card_text(model_key: str) -> str:
-    """Fetch model card text (README.md or metadata.json) from S3 if available."""
-    for possible_key in [
+    possible_keys = [
         model_key.replace(".zip", "/README.md"),
         model_key.replace(".zip", "/metadata.json"),
-    ]:
+    ]
+    for key in possible_keys:
         try:
-            obj = s3_client.get_object(Bucket=S3_BUCKET, Key=possible_key)
-            content = obj['Body'].read().decode('utf-8', errors='ignore')
-            return content
+            obj = s3_client.get_object(Bucket=S3_BUCKET, Key=key)
+            return obj["Body"].read().decode("utf-8", errors="ignore")
         except ClientError as e:
-            if e.response['Error']['Code'] != 'NoSuchKey':
+            if e.response["Error"]["Code"] != "NoSuchKey":
                 raise
     return ""
 
-
 def search_models_by_card(all_models: List[Dict], regex: str) -> List[Dict]:
-    """Filter models whose README or metadata contains the given regex."""
-    pattern = re.compile(regex, re.IGNORECASE)
+    import re as _re
+    pattern = _re.compile(regex, _re.IGNORECASE)
     matched = []
-
     for model in all_models:
         try:
-            card_text = get_model_card_text(model['key'])
-            if pattern.search(card_text):
+            text = get_model_card_text(model["key"])
+            if pattern.search(text):
                 matched.append(model)
-        except Exception as e:
-            print(f"Skipping {model['name']} due to error: {e}")
-
+        except Exception:
+            continue
     return matched
