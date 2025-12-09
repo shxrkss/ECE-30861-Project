@@ -2,7 +2,10 @@
 import math
 from typing import Dict
 from src.models.artifacts import ArtifactCost
-from src.services.s3_service import s3_client, S3_BUCKET
+from src.services.s3_service import s3_client, get_bucket_name
+
+bucket = get_bucket_name()
+s3_client.upload_file(path, bucket, key)
 
 
 def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
@@ -23,7 +26,7 @@ def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
         s3_key = key
 
     # HEAD request
-    head = s3_client.head_object(Bucket=S3_BUCKET, Key=s3_key)
+    head = s3_client.head_object(Bucket=bucket, Key=s3_key)
     size_bytes = head["ContentLength"]
     mb = round(size_bytes / (1024 * 1024), 1)
 
