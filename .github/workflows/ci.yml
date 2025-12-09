@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip inst all pytest
+          pip install pytest
           
       - name: Set PYTHONPATH so tests can import src/
         run: |
