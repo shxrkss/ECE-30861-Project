@@ -23,8 +23,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     from metrics.size_metric import SizeMetric
     from metrics.performance_metric import PerformanceClaimMetricLLM
     
-    #from metrics.reproducibility_metric import ReproducibilityMetric
-    #from metrics.reviewedness_metric import ReviewednessMetric
+    from metrics.reproducibility_metric import ReproducibilityMetric
+    from metrics.reviewedness_metric import ReviewednessMetric
     
     code_url, dataset_url, model_url = repo_info
 
@@ -36,8 +36,9 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
     size_rpi, size_jetson, size_pc, size_aws, size_latency = None, None, None, None, None
     performance_score, performance_latency = None, None
 
-    #reproducibility_score, reproducibility_latency = None, None
-    #reviewedness_score, reviewedness_latency = None, None
+    reproducibility_score, reproducibility_latency = None, None
+    reviewedness_score, reviewedness_latency = None, None
+    
     def run_bus():
         nonlocal bus_score, bus_latency
         bus_score, bus_latency = BusMetric().compute(model_url)
@@ -68,13 +69,13 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         nonlocal performance_score, performance_latency
         performance_score, performance_latency = PerformanceClaimMetricLLM(debug=False).compute(model_url, hf_token=None)
     
-    #def run_reproducibility():
-    #    nonlocal reproducibility_score, reproducibility_latency
-    #    reproducibility_score, reproducibility_latency = ReproducibilityMetric().compute(model_url, hf_token = None)
+    def run_reproducibility():
+        nonlocal reproducibility_score, reproducibility_latency
+        reproducibility_score, reproducibility_latency = ReproducibilityMetric().compute(model_url, hf_token = None)
 
-    #def run_reviewedness():
-    #    nonlocal reviewedness_score, reviewedness_latency
-    #    reviewedness_score, reviewedness_latency = ReviewednessMetric().compute(model_url)
+    def run_reviewedness():
+        nonlocal reviewedness_score, reviewedness_latency
+        reviewedness_score, reviewedness_latency = ReviewednessMetric().compute(model_url)
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(run_bus)
@@ -84,8 +85,8 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         executor.submit(run_ramp)
         executor.submit(run_size)
         executor.submit(run_performance)
-        #executor.submit(run_reproducibility)
-        #executor.submit(run_reviewednss)
+        executor.submit(run_reproducibility)
+        executor.submit(run_reviewedness)
 
     data_set_code_score = (code_score + data_score) / 2.0
     data_set_code_latency = (code_latency + data_latency) / 2
@@ -107,13 +108,13 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         "performance_claims_latency": int(performance_latency),
         "license": round(license_score, 2),
         "license_latency": license_latency,
-        # "size_score": {
-        #     "raspberry_pi": 0.0,
-        #     "jetson_nano": 0.0,
-        #     "desktop_pc": 0.0,
-        #     "aws_server": 0.0
-        # },
-        # "size_score_latency": 0,
+        "size_score": {
+            "raspberry_pi": 0.0,
+            "jetson_nano": 0.0,
+            "desktop_pc": 0.0,
+            "aws_server": 0.0
+        },
+        "size_score_latency": 0,
         "size_score": {
             "raspberry_pi": round(size_rpi, 2),
             "jetson_nano": round(size_jetson, 2),
@@ -127,10 +128,21 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         "dataset_quality_latency": int(data_latency),
         "code_quality": round(code_score, 2),
         "code_quality_latency": int(code_latency)
-        #,"reproducibility": round(reproducibility_score, 2)
-        #,"reproducibility_latency" : int(reproducibility_latency)
-        #,"reviwedness": round(reviwedness_score, 2)
-        #,"reviwedness_latency" : int(reviwedness_latency)
+        ,"reproducibility": round(reproducibility_score, 2)
+        ,"reproducibility_latency" : int(reproducibility_latency)
+        ,"reviewedness": round(reviewedness_score, 2)
+        ,"reviewedness_latency" : int(reviewedness_latency)
     }
 
+from src.services.auth import verify_api_key
+from src.metrics.sandbox_runner import run_metric_in_sandbox
 
+def run_all_metrics_triggered(user_info: dict, model_info):
+    # only allow admin role to run full orchestrator
+    if "admin" not in user_info.get("roles", []):
+        raise PermissionError("Only admin users may trigger full metric runs")
+    # For each metric that requires running untrusted code, call sandbox runner
+    # Example: call an external script that runs metrics
+    cmd = ["python", "src/metrics/run_all_metrics_cli.py", "--model", model_info["s3_key"]]
+    returncode, out, err = run_metric_in_sandbox(cmd, timeout=120)
+    # parse output etc.

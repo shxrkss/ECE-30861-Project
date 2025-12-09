@@ -9,16 +9,17 @@ from src.log import setup_logging
 import logging
 import re
 from fastapi import FastAPI
-from src.api.routes_models import router as models_router  # optional, if you have routes
+from src.api import routes_models, routes_enumerate
 
+app = FastAPI(title="Trustworthy Model Registry")
+
+app.include_router(routes_models.router, prefix="/api")
+app.include_router(routes_enumerate.router, prefix="/api")
 #from orchestrator import run_all_metrics
 
 # -----------------------------------------------------------------------------------
 # IMPORTANT NOTE: ALL PRINT STATEMENTS NEED TO GO TO LOGFILE BASED ON VERBOSITY LEVEL
 # -----------------------------------------------------------------------------------
-
-app = FastAPI(title="Trustworthy Model Registry")
-app.include_router(models_router, prefix="/api")
 
 
 @app.get("/")
