@@ -62,3 +62,9 @@ def enforce_rate_limit(user_info: dict = Depends(verify_api_key)):
     if not rate_limiter.allow(user_id):
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     return user_info  # pass user info forward
+
+def reset_rate_limit_state():
+    """
+    Clear in-memory rate limiter state. Redis-based limits will expire naturally.
+    """
+    _in_memory.clear()
