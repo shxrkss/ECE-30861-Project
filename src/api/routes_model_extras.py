@@ -1,4 +1,5 @@
 # src/api/routes_model_extras.py
+from src.services.auth import require_role
 from fastapi import APIRouter, HTTPException, Path, Query, Header, Depends
 from typing import Optional
 
