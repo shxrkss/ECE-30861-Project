@@ -1,0 +1,50 @@
+[2025-11-24 12:13:44,208] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:16:19,337] INFO trustworthy-registry - download event: user=True filename=practical-files.zip
+[2025-11-24 12:16:58,785] WARNING trustworthy-registry - download requested for models/nonexistent.zip but no checksum recorded
+[2025-11-24 12:17:22,560] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:22,805] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:23,114] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:23,435] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:23,695] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:23,974] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:24,275] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:24,596] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:24,875] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:25,159] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:25,414] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:25,705] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:25,986] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:26,255] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:26,565] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:26,865] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:27,178] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:27,525] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:27,844] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 12:17:28,145] WARNING trustworthy-registry - download requested for models/test.zip but no checksum recorded
+[2025-11-24 13:00:24,513] CRITICAL root - Starting Bus Metric
+[2025-11-24 13:00:24,513] INFO root - Accessed API
+[2025-11-24 13:00:24,513] CRITICAL root - Finished Bus Metric, with latency
+[2025-11-24 13:00:24,530] CRITICAL root - Starting Bus Metric
+[2025-11-24 13:00:24,562] CRITICAL root - Starting Run
+[2025-11-24 13:00:24,563] CRITICAL root - Error in usage, exiting.
+[2025-11-24 13:00:24,568] CRITICAL root - Starting Run
+[2025-11-24 13:00:24,570] INFO root - Running program
+[2025-11-24 13:00:24,581] CRITICAL root - Starting Run
+[2025-11-24 13:00:24,581] INFO root - Running program
+[2025-11-24 13:00:24,581] CRITICAL root - Finished code, JSON created, exiting.
+[2025-11-24 13:00:26,768] INFO src.aws_utils - Uploaded C:\Users\oreon\AppData\Local\Temp\pytest-of-oreon\pytest-0\test_upload_file_to_s30\dummy.txt to s3://bss-model-registry/models/dummy.txt
+[2025-11-24 13:00:27,151] INFO src.aws_utils - Downloaded s3://bss-model-registry/models/dummy.txt to C:\Users\oreon\AppData\Local\Temp\pytest-of-oreon\pytest-0\test_download_file_from_s30\dummy.txt
+[2025-11-24 13:00:28,480] INFO root - [LicenseCheck] Model=permissive, Repo=permissive, Score=1.0
+[2025-11-24 13:00:28,495] ERROR root - [LicenseCheck] Failed: not enough values to unpack (expected 2, got 1)
+[2025-11-24 13:00:28,520] CRITICAL root - Starting Reviewedness Metric
+[2025-11-24 13:00:28,670] INFO httpx - HTTP Request: GET http://testserver/health "HTTP/1.1 404 Not Found"
+[2025-11-24 13:00:28,736] INFO trustworthy-registry - upload event: user=unittest-user filename=small.zip checksum=59fdbb976f6e04d912861f5ea62f80e8fbe6d4fbedf48a30ee4204e5b1e36e67
+[2025-11-24 13:00:29,461] INFO httpx - HTTP Request: POST http://testserver/api/upload "HTTP/1.1 200 OK"
+[2025-11-24 13:00:29,530] INFO trustworthy-registry - download event: user=unittest-user filename=small.zip
+[2025-11-24 13:00:29,534] INFO httpx - HTTP Request: GET http://testserver/api/download/small.zip "HTTP/1.1 200 OK"
+[2025-11-24 13:00:29,561] INFO root - [SizeCostMetric] Computed size=500.00MB, score=0.139
+[2025-11-24 13:00:29,620] INFO root - [SizeCostMetric] Computed size=250.00MB, score=0.153
+[2025-11-24 13:00:29,641] INFO root - [TreeScore] Starting computation for derived-model
+[2025-11-24 13:00:29,695] INFO root - [TreeScore] Computed score=1.0 (latency=54ms)
+[2025-11-24 13:00:29,711] INFO root - [TreeScore] Starting computation for missing-model
+[2025-11-24 13:00:29,711] INFO root - [TreeScore] Computed score=0.5 (latency=0ms)

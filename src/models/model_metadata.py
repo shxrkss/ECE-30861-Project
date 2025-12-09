@@ -7,3 +7,4 @@ class ModelMetadata(BaseModel):
     size: int
     last_modified: str
     version: Optional[str] = "v1.0.0"
+    card_snippet: Optional[str] = None 

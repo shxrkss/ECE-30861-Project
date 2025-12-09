@@ -1,31 +1,66 @@
-import os
 import logging
+import re
+from logging.handlers import RotatingFileHandler
+import os
+import hmac
+import hashlib
 
+LOG_FILE = os.getenv("LOG_FILE_PATH", "logs/app.log")
+os.makedirs(os.path.dirname(LOG_FILE) or ".", exist_ok=True)
 
+REDACT_PATTERNS = [
+    (re.compile(r"AKIA[0-9A-Z]{16}"), "[REDACTED_AWS_KEY]"),
+    (re.compile(r"(?i)api[_-]?key[:=]\s*[A-Za-z0-9\-_]+"), "API_KEY=[REDACTED]"),
+    (re.compile(r"(?i)github[_-]?token[:=]\s*[A-Za-z0-9\-_]+"), "GITHUB_TOKEN=[REDACTED]"),
+]
 
-def setup_logging():
-    log_file = os.getenv("LOG_FILE", "logfile.log")
-    log_level = int(os.getenv("LOG_LEVEL", "0"))
+# Optional key for signing logs
+HMAC_KEY = os.getenv("LOG_HMAC_KEY", "")
 
-    if log_level == 0:
-        level = logging.CRITICAL
-    elif log_level == 1:
-        level = logging.INFO
-    elif log_level == 2:
-        level = logging.DEBUG
-    else:
-        level = logging.CRITICAL  # fallback if invalid value
+class RedactingFormatter(logging.Formatter):
+    def format(self, record):
+        msg = super().format(record)
 
-    logging.basicConfig(
-        filename=log_file,
-        level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        filemode='w',
-        handlers=[logging.FileHandler("logs/metrics.log"), logging.StreamHandler()]
+        # redact secrets
+        for pat, repl in REDACT_PATTERNS:
+            msg = pat.sub(repl, msg)
+
+        # flatten newlines
+        msg = msg.replace("\n", " ").replace("\r", " ")
+
+        # attach HMAC signature if configured
+        if HMAC_KEY:
+            sig = hmac.new(HMAC_KEY.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256).hexdigest()
+            msg = f"{msg} | sig={sig}"
+
+        return msg
+
+def setup_logging(level=logging.INFO):
+    root = logging.getLogger()
+    root.setLevel(level)
+
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=5_000_000,
+        backupCount=5,
+        encoding="utf-8",
     )
+    file_handler.setFormatter(RedactingFormatter("[%(asctime)s] %(levelname)s %(name)s - %(message)s"))
 
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(RedactingFormatter("%(levelname)s: %(message)s"))
 
-def log_messages_test():
-    logging.critical("This is a critical message.")  # Will be logged if log_level >= 0
-    logging.info("This is an informational message.")  # Will be logged if log_level >= 1
-    logging.debug("This is a debug message.")  # Will be logged if log_level == 2
+    # Reset any old handlers
+    if root.handlers:
+        for h in list(root.handlers):
+            root.removeHandler(h)
+
+    root.addHandler(file_handler)
+    root.addHandler(stream_handler)
+
+    # quiet noisy libs
+    logging.getLogger("botocore").setLevel(logging.WARNING)
+    logging.getLogger("boto3").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+logger = logging.getLogger("trustworthy-registry")

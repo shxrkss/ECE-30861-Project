@@ -133,4 +133,15 @@ def run_all_metrics(repo_info: Tuple[str, str, str]) -> Dict[str, float]:
         #,"reviwedness_latency" : int(reviwedness_latency)
     }
 
+from src.services.auth import verify_api_key
+from src.metrics.sandbox_runner import run_metric_in_sandbox
 
+def run_all_metrics_triggered(user_info: dict, model_info):
+    # only allow admin role to run full orchestrator
+    if "admin" not in user_info.get("roles", []):
+        raise PermissionError("Only admin users may trigger full metric runs")
+    # For each metric that requires running untrusted code, call sandbox runner
+    # Example: call an external script that runs metrics
+    cmd = ["python", "src/metrics/run_all_metrics_cli.py", "--model", model_info["s3_key"]]
+    returncode, out, err = run_metric_in_sandbox(cmd, timeout=120)
+    # parse output etc.
