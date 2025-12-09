@@ -115,3 +115,31 @@ def search_models_by_card(all_models: List[Dict], regex: str) -> List[Dict]:
         except Exception:
             continue
     return matched
+
+def delete_prefix(prefix: str = "models/") -> int:
+    """
+    Delete all S3 objects under the given prefix.
+    Returns the number of deleted objects.
+    """
+    paginator = s3_client.get_paginator("list_objects_v2")
+    pages = paginator.paginate(Bucket=S3_BUCKET, Prefix=prefix)
+    to_delete = []
+
+    for page in pages:
+        for obj in page.get("Contents", []):
+            to_delete.append({"Key": obj["Key"]})
+
+    if not to_delete:
+        return 0
+
+    # S3 delete_objects supports up to 1000 keys per call
+    deleted_count = 0
+    for i in range(0, len(to_delete), 1000):
+        chunk = to_delete[i : i + 1000]
+        resp = s3_client.delete_objects(
+            Bucket=S3_BUCKET,
+            Delete={"Objects": chunk},
+        )
+        deleted_count += len(resp.get("Deleted", []))
+
+    return deleted_count

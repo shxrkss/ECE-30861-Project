@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Query
 from fastapi.responses import JSONResponse
 from botocore.exceptions import ClientError
+from src.services.health_events import record_event
 from src.services.auth import verify_api_key
 from src.services.rate_limit import rate_limiter, enforce_rate_limit
 from src.services.s3_service import (
@@ -49,19 +50,47 @@ def validate_zip_safely(zip_path: str):
         raise HTTPException(status_code=400, detail="Not a valid ZIP")
 
 @router.get("/download/{filename}")
-def download_model(filename: str, user_info: dict = Depends(verify_api_key)):
+def download_model(
+    filename: str,
+    part: str = Query("full", regex="^(full|weights|dataset)$"),
+    user_info: dict = Depends(verify_api_key),
+):
+    """
+    Download a model artifact.
+
+    part = "full" (default) → full ZIP
+    part = "weights"        → weights-only artifact if present in manifest
+    part = "dataset"        → dataset-only artifact if present in manifest
+    """
     user_id = user_info.get("user", "unknown")
-    s3_key = f"models/{filename}"
-    # read manifest
-    manifest = read_manifest(s3_key)
+
+    # We still look up manifest using the canonical full key
+    full_key = f"models/{filename}"
+    manifest = read_manifest(full_key)
     if not manifest:
-        logger.warning(f"download requested for {s3_key} but manifest missing")
+        logger.warning(f"download requested for {full_key} but manifest missing")
         raise HTTPException(status_code=404, detail="Model metadata missing or file not found")
-    # verify checksum exists
+
+    # Choose which S3 key to return based on 'part'
+    if part == "full":
+        s3_key = manifest.get("full_s3_key") or full_key
+    elif part == "weights":
+        s3_key = manifest.get("weights_s3_key")
+    else:  # part == "dataset"
+        s3_key = manifest.get("dataset_s3_key")
+
+    if not s3_key:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Requested part '{part}' not available for this model",
+        )
+
+    # verify checksum exists for chosen key
     stored_checksum = manifest.get("checksum")
     if not stored_checksum:
         raise HTTPException(status_code=404, detail="Model missing checksum")
-    # Optionally compare the metadata checksum with head_object metadata
+
+    # Compare metadata checksum with head_object metadata/etag if present
     head_chk = get_s3_object_checksum(s3_key)
     if head_chk and head_chk != stored_checksum:
         logger.error(f"Checksum mismatch for {s3_key}: manifest={stored_checksum} head={head_chk}")
@@ -71,8 +100,15 @@ def download_model(filename: str, user_info: dict = Depends(verify_api_key)):
     if not presigned:
         raise HTTPException(status_code=500, detail="Failed to generate presigned URL")
 
-    logger.info(f"download event: user={user_id} filename={filename}")
-    return JSONResponse({"download_url": presigned, "checksum": stored_checksum})
+    logger.info(f"download event: user={user_id} filename={filename} part={part}")
+    record_event("download", user_id)
+
+    return {
+    "success": True,
+    "part": part,
+    "checksum": stored_checksum,
+    "download_url": presigned,
+    }
 
 @router.post("/upload")
 async def upload_model(
@@ -118,12 +154,19 @@ async def upload_model(
     upload_file_to_s3(tmp_path, s3_key, checksum=checksum)
 
     # Write manifest
+    # src/api/routes_models.py
+
+    # Write manifest
     manifest = {
         "uploader": user_id,
         "checksum": checksum,
         "filename": file.filename,
         "uploaded_at": datetime.utcnow().isoformat() + "Z",
         "notes": "manifest auto-generated",
+        # New fields to support sub-aspect downloads
+        "full_s3_key": s3_key,
+        "weights_s3_key": None,   # optional, can be filled by ingest/other tools
+        "dataset_s3_key": None,   # optional, can be filled by ingest/other tools
     }
     write_manifest(s3_key, manifest)
 
@@ -132,7 +175,7 @@ async def upload_model(
         os.remove(tmp_path)
     except Exception:
         pass
-
+    record_event("upload", user_id)
     return {
         "success": True,
         "filename": file.filename,

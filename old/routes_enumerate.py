@@ -4,6 +4,7 @@ from src.services.s3_service import list_s3_models, search_models_by_card, get_m
 from src.models.model_metadata import ModelMetadata
 from src.services.auth import verify_api_key
 from src.services.sanitize import redact_urls
+from src.services.health_events import record_event
 from src.services.rate_limit import rate_limiter, enforce_rate_limit
 import re
 
@@ -58,7 +59,9 @@ async def enumerate_models(
             data["card_snippet"] = snippet_safe
 
             enriched.append(ModelMetadata(**data))
-
+        from_user = user_info.get("user", "unknown")
+        record_event("enumerate", from_user)
+        
         return enriched
 
     except Exception as e:
