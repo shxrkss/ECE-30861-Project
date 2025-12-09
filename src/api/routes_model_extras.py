@@ -21,6 +21,10 @@ from src.services.license_compat import (
 
 router = APIRouter(tags=["model-extras"])
 
+@router.get("/enumerate", dependencies=[Depends(require_role("enumerate"))])
+def enumerate_route():
+    return enumerate_models()
+
 
 def require_auth(x_authorization: str = Header(..., alias="X-Authorization")):
     """
