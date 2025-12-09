@@ -1,7 +1,7 @@
 import time
 import logging
 import requests
-from metrics.base import MetricBase
+from .base import MetricBase
 
 class LicenseCheckMetric(MetricBase):
     """

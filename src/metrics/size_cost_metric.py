@@ -2,7 +2,7 @@ import os
 import time
 import math
 import logging
-from metrics.base import MetricBase
+from .base import MetricBase
 from huggingface_hub import HfApi
 import boto3
 from botocore.exceptions import ClientError

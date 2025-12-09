@@ -17,7 +17,7 @@ sys.stderr = open(os.devnull, "w")
 from huggingface_hub import HfApi
 from transformers import AutoConfig, AutoModel
 from accelerate import init_empty_weights  # avoids allocating weights
-from metrics.base import MetricBase
+from .base import MetricBase
 from metrics.utils.tools import clamp
 
 # -------------------
