@@ -1,7 +1,7 @@
 # src/services/rating_engine.py
 from datetime import datetime
 from src.models.artifacts import ModelRating
-from orchestrator import run_all_metrics
+from src.orchestrator import run_all_metrics
 
 
 def compute_model_rating(artifact) -> ModelRating:

@@ -1,18 +1,22 @@
-# start from a lightweight python image
+# Use slim python base image
 FROM python:3.11-slim
 
-# create and move into the work directory inside the container
+# Set container working directory
 WORKDIR /app
 
-# copy dependency list and install Python packages
-COPY requirements.txt .
+# Copy dependency list and install packages
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy the rest of your backend source code
-COPY src /app
+# Copy backend source code EXACTLY preserving folder structure
+COPY src /app/src
 
-# expose the port FastAPI will listen on (same as your code)
-EXPOSE 8000
+# Copy frontend files to serve at /
+COPY index.html /app/index.html
+COPY styles.css /app/styles.css
 
-# command to start your FastAPI app
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose the correct port the autograder expects
+EXPOSE 8080
+
+# Start FastAPI with the correct module path and port
+CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8080"]
