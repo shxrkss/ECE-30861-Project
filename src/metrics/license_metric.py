@@ -10,7 +10,7 @@ from src.metrics.base import MetricBase ########################################
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import logging
-from log import setup_logging
+from ..log import setup_logging
 
 # Common license aliases -> canonical SPDX-ish keys (extend as needed)
 LICENSE_NORMALIZATION = {

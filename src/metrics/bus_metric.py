@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import logging
-from log import setup_logging
+from ..log import setup_logging
 
 # THIS METRIC HAS BEEN COMPLETED
 # if needed, can implement huggingface api token with: HF_API_TOKEN
