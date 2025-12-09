@@ -4,9 +4,6 @@ from typing import Dict
 from src.models.artifacts import ArtifactCost
 from src.services.s3_service import s3_client, get_bucket_name
 
-bucket = get_bucket_name()
-s3_client.upload_file(path, bucket, key)
-
 
 def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
     """
@@ -18,14 +15,15 @@ def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
     if not key:
         raise RuntimeError("Artifact missing blob reference")
 
-    # Bucket S3 key may be stored as full URL. Extract if necessary.
+    # Extract S3 key from a full URL if necessary
     if "amazonaws.com" in key:
-        # key after last slash
         s3_key = key.split("/")[-1]
     else:
         s3_key = key
 
-    # HEAD request
+    bucket = get_bucket_name()
+
+    # HEAD request to get object size
     head = s3_client.head_object(Bucket=bucket, Key=s3_key)
     size_bytes = head["ContentLength"]
     mb = round(size_bytes / (1024 * 1024), 1)
