@@ -45,3 +45,5 @@ def s3_test():
         }
     except Exception as e:
         return {"status": "error", "error": str(e), "bucket": bucket}
+    
+print("DEPLOY TEST")
