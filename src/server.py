@@ -15,8 +15,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
-# NOTE: No /api prefix — paths must match the autograder spec exactly.
 app.include_router(routes_health.router)
 app.include_router(routes_artifacts.router)
 app.include_router(routes_model_extras.router)
@@ -26,9 +24,9 @@ app.include_router(routes_tracks.router)
 app.include_router(routes_model_extras.router, prefix="/api")
 
 
-# Optional root
 @app.get("/")
 def root():
+    # simple root for Lighthouse
     return {"message": "Artifact Registry running"}
 
 @app.get("/api/s3-test")

@@ -32,26 +32,12 @@ from src.services.artifact_store import (
 router = APIRouter(tags=["artifacts"])
 
 
-# ---------------------------------------------------------------------------
-# Authentication stub (baseline-friendly)
-# ---------------------------------------------------------------------------
-
 def require_auth(x_authorization: str = Header(..., alias="X-Authorization")):
     """
-    The autograder REQUIRES this header. If you do not implement real auth, you
-    MUST still accept the header, regardless of its contents.
-
-    Returning it allows downstream logic to inspect if needed.
+    In 'no auth' mode we just require the header to exist and ignore it.
     """
-    if not x_authorization:
-        raise HTTPException(status_code=403, detail="Authentication failed")
     return x_authorization
 
-
-# ---------------------------------------------------------------------------
-# POST /artifact/{artifact_type}
-# Create a new artifact
-# ---------------------------------------------------------------------------
 
 @router.post("/artifact/{artifact_type}", response_model=Artifact, status_code=201)
 def artifact_create(
@@ -59,26 +45,16 @@ def artifact_create(
     data: ArtifactData = ...,
     _token: str = Depends(require_auth),
 ):
-    # Validate request body fields
     if not data or not data.url:
         raise HTTPException(status_code=400, detail="Missing or malformed artifact_data")
 
-    # Spec requires: 409 Conflict if exact same artifact already exists
     existing = find_existing_artifact(artifact_type, str(data.url))
     if existing is not None:
         raise HTTPException(status_code=409, detail="Artifact exists already")
 
-    try:
-        art = create_artifact(artifact_type, data)
-        return art
-    except Exception:
-        raise HTTPException(status_code=400, detail="Malformed artifact_data")
+    art = create_artifact(artifact_type, data)
+    return art
 
-
-# ---------------------------------------------------------------------------
-# GET /artifact/{artifact_type}/{id}
-# Retrieve a specific artifact
-# ---------------------------------------------------------------------------
 
 @router.get("/artifact/{artifact_type}/{id}", response_model=Artifact)
 def artifact_retrieve(
@@ -89,15 +65,8 @@ def artifact_retrieve(
     art = get_artifact(artifact_type, id)
     if not art:
         raise HTTPException(status_code=404, detail="Artifact does not exist")
-
-    # Nothing else required; `download_url` may be None if not populated yet
     return art
 
-
-# ---------------------------------------------------------------------------
-# PUT /artifact/{artifact_type}/{id}
-# Update an existing artifact
-# ---------------------------------------------------------------------------
 
 @router.put("/artifact/{artifact_type}/{id}")
 def artifact_update_route(
@@ -106,7 +75,6 @@ def artifact_update_route(
     artifact: Artifact = ...,
     _token: str = Depends(require_auth),
 ):
-    # Validate body
     if artifact is None or artifact.metadata.id != id:
         raise HTTPException(status_code=400, detail="Malformed artifact or id mismatch")
 
@@ -117,11 +85,6 @@ def artifact_update_route(
     return {"status": "updated"}
 
 
-# ---------------------------------------------------------------------------
-# DELETE /artifact/{artifact_type}/{id}
-# Delete an artifact
-# ---------------------------------------------------------------------------
-
 @router.delete("/artifact/{artifact_type}/{id}")
 def artifact_delete_route(
     artifact_type: ArtifactType = Path(...),
@@ -131,14 +94,8 @@ def artifact_delete_route(
     ok = delete_artifact(artifact_type, id)
     if not ok:
         raise HTTPException(status_code=404, detail="Artifact does not exist")
-
     return {"status": "deleted"}
 
-
-# ---------------------------------------------------------------------------
-# POST /artifacts
-# Enumeration with pagination and multiple queries
-# ---------------------------------------------------------------------------
 
 @router.post("/artifacts", response_model=List[ArtifactMetadata])
 def artifacts_list_route(
@@ -147,29 +104,19 @@ def artifacts_list_route(
     offset: Optional[str] = Query(None),
     _token: str = Depends(require_auth),
 ):
-    # Validate queries
     if not isinstance(queries, list) or len(queries) == 0:
         raise HTTPException(
             status_code=400,
             detail="artifact_query must be an array with at least one entry",
         )
-
-    # Basic field validation
     for q in queries:
         if not q.name:
             raise HTTPException(status_code=400, detail="Query missing required name field")
 
     page, next_offset = list_artifacts(queries, offset)
-
-    # Set response header required by spec
     response.headers["offset"] = next_offset
-
     return page
 
-
-# ---------------------------------------------------------------------------
-# GET /artifact/byName/{name}
-# ---------------------------------------------------------------------------
 
 @router.get("/artifact/byName/{name}", response_model=List[ArtifactMetadata])
 def artifact_by_name_route(
@@ -182,20 +129,14 @@ def artifact_by_name_route(
     results = list_by_name(name)
     if not results:
         raise HTTPException(status_code=404, detail="No such artifact")
-
     return results
 
-
-# ---------------------------------------------------------------------------
-# POST /artifact/byRegEx
-# ---------------------------------------------------------------------------
 
 @router.post("/artifact/byRegEx", response_model=List[ArtifactMetadata])
 def artifact_by_regex_route(
     regex: ArtifactRegEx,
     _token: str = Depends(require_auth),
 ):
-    # Validate regex field
     if not regex or not regex.regex:
         raise HTTPException(status_code=400, detail="Malformed artifact_regex")
 
@@ -206,14 +147,8 @@ def artifact_by_regex_route(
 
     if not results:
         raise HTTPException(status_code=404, detail="No artifact found under this regex")
-
     return results
 
-
-# ---------------------------------------------------------------------------
-# GET /artifact/{artifact_type}/{id}/audit
-# NON-BASELINE (stub)
-# ---------------------------------------------------------------------------
 
 @router.get("/artifact/{artifact_type}/{id}/audit")
 def artifact_audit_get(
@@ -221,5 +156,5 @@ def artifact_audit_get(
     id: str = Path(...),
     _token: str = Depends(require_auth),
 ):
-    # AUDIT is non-baseline; skeleton returns empty list.
+    # NON-BASELINE stub – empty audit trail
     return []

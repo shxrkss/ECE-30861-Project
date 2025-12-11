@@ -8,8 +8,7 @@ router = APIRouter(tags=["auth"])
 @router.put("/authenticate")
 def create_auth_token(_req: AuthenticationRequest):
     """
-    Spec: If you don't implement the described auth scheme,
-    this endpoint MUST return HTTP 501 and X-Authorization should
-    be ignored by other endpoints (we still enforce presence though).
+    We are NOT implementing access-control track.
+    Per spec: return 501 and ignore X-Authorization on other endpoints.
     """
     raise HTTPException(status_code=501, detail="Authentication not implemented")
