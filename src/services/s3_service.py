@@ -11,23 +11,21 @@ from datetime import datetime
 # -------------------------------------------------------------------
 # Safe Lazy Initialization (prevents import failures in CI)
 # -------------------------------------------------------------------
-
-def get_s3_client():
-    return boto3.client("s3")
-
-s3_client = get_s3_client()
-
-
 def get_bucket_name() -> str:
     """
-    Lazy bucket loader. Raises ONLY when actually used.
-    Prevents CI from failing simply by importing this module.
+    Returns the S3 bucket name. Fails only when the bucket is actually used.
+    Makes testing safe because importing this module doesn't blow up.
     """
     bucket = os.getenv("AWS_BUCKET_NAME")
     if not bucket:
         raise RuntimeError("AWS_BUCKET_NAME must be set in environment")
     return bucket
 
+def get_s3_client():
+    """
+    Lazy S3 client creation – safe for local tests.
+    """
+    return boto3.client("s3")
 
 # -------------------------------------------------------------------
 # Upload / Download utilities
@@ -35,11 +33,14 @@ def get_bucket_name() -> str:
 
 def upload_file_to_s3(local_path: str, key: str, checksum: str = None) -> bool:
     bucket = get_bucket_name()
-    extra_args = {"ServerSideEncryption": "AES256"}
+    s3 = get_s3_client()
+
+    extra = {"ServerSideEncryption": "AES256"}
     if checksum:
-        extra_args["Metadata"] = {"checksum": checksum}
+        extra["Metadata"] = {"checksum": checksum}
+
     try:
-        s3_client.upload_file(local_path, bucket, key, ExtraArgs=extra_args)
+        s3.upload_file(local_path, bucket, key, ExtraArgs=extra)
         return True
     except ClientError as e:
         print(f"S3 upload error → {e}")
@@ -48,8 +49,9 @@ def upload_file_to_s3(local_path: str, key: str, checksum: str = None) -> bool:
 
 def get_s3_object_checksum(key: str) -> Optional[str]:
     bucket = get_bucket_name()
+    s3 = get_s3_client()
     try:
-        head = s3_client.head_object(Bucket=bucket, Key=key)
+        head = s3.head_object(Bucket=bucket, Key=key)
         meta = head.get("Metadata", {})
         chk = meta.get("checksum")
         if chk:
@@ -62,8 +64,9 @@ def get_s3_object_checksum(key: str) -> Optional[str]:
 
 def generate_presigned_download_url(key: str, expires_in: int = 300) -> Optional[str]:
     bucket = get_bucket_name()
+    s3 = get_s3_client()
     try:
-        return s3_client.generate_presigned_url(
+        return s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket, "Key": key},
             ExpiresIn=expires_in,
@@ -83,10 +86,11 @@ def _manifest_key_for_model_key(model_key: str) -> str:
 
 def write_manifest(model_key: str, manifest: Dict) -> bool:
     bucket = get_bucket_name()
+    s3 = get_s3_client()
     key = _manifest_key_for_model_key(model_key)
     js = json.dumps(manifest).encode("utf-8")
     try:
-        s3_client.put_object(
+        s3.put_object(
             Bucket=bucket,
             Key=key,
             Body=js,
@@ -100,9 +104,10 @@ def write_manifest(model_key: str, manifest: Dict) -> bool:
 
 def read_manifest(model_key: str) -> Optional[Dict]:
     bucket = get_bucket_name()
+    s3 = get_s3_client()
     key = _manifest_key_for_model_key(model_key)
     try:
-        obj = s3_client.get_object(Bucket=bucket, Key=key)
+        obj = s3.get_object(Bucket=bucket, Key=key)
         content = obj["Body"].read().decode("utf-8")
         return json.loads(content)
     except ClientError:
@@ -115,7 +120,8 @@ def read_manifest(model_key: str) -> Optional[Dict]:
 
 def list_s3_models(prefix: str = "models/") -> List[Dict]:
     bucket = get_bucket_name()
-    paginator = s3_client.get_paginator("list_objects_v2")
+    s3 = get_s3_client()
+    paginator = s3.get_paginator("list_objects_v2")
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
     results = []
     for page in pages:
@@ -133,13 +139,14 @@ def list_s3_models(prefix: str = "models/") -> List[Dict]:
 
 def get_model_card_text(model_key: str) -> str:
     bucket = get_bucket_name()
+    s3 = get_s3_client()
     possible_keys = [
         model_key.replace(".zip", "/README.md"),
         model_key.replace(".zip", "/metadata.json"),
     ]
     for key in possible_keys:
         try:
-            obj = s3_client.get_object(Bucket=bucket, Key=key)
+            obj = s3.get_object(Bucket=bucket, Key=key)
             return obj["Body"].read().decode("utf-8", errors="ignore")
         except ClientError as e:
             if e.response["Error"]["Code"] != "NoSuchKey":
@@ -163,7 +170,8 @@ def search_models_by_card(all_models: List[Dict], regex: str) -> List[Dict]:
 
 def delete_prefix(prefix: str = "models/") -> int:
     bucket = get_bucket_name()
-    paginator = s3_client.get_paginator("list_objects_v2")
+    s3 = get_s3_client()
+    paginator = s3.get_paginator("list_objects_v2")
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
     to_delete = []
@@ -177,7 +185,7 @@ def delete_prefix(prefix: str = "models/") -> int:
     deleted_count = 0
     for i in range(0, len(to_delete), 1000):
         chunk = to_delete[i:i + 1000]
-        resp = s3_client.delete_objects(
+        resp = s3.delete_objects(
             Bucket=bucket,
             Delete={"Objects": chunk},
         )

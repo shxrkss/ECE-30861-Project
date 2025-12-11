@@ -30,3 +30,20 @@ app.include_router(routes_model_extras.router, prefix="/api")
 @app.get("/")
 def root():
     return {"message": "Artifact Registry running"}
+
+@app.get("/api/s3-test")
+def s3_test():
+    import boto3, os
+    bucket = os.getenv("AWS_BUCKET_NAME")
+    s3 = boto3.client("s3")
+
+    # Try listing contents
+    try:
+        response = s3.list_objects_v2(Bucket=bucket)
+        return {
+            "status": "ok",
+            "bucket": bucket,
+            "contents": response.get("Contents", []),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "bucket": bucket}
