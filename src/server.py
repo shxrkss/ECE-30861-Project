@@ -1,7 +1,7 @@
-# src/server.py
 from fastapi import FastAPI
+from mangum import Mangum
 
-from src.api import (
+from api import (
     routes_health,
     routes_artifacts,
     routes_model_extras,
@@ -11,10 +11,11 @@ from src.api import (
 )
 
 app = FastAPI(
-    title="ECE 461 / Fall 2025 / Phase 2 - Trustworthy Artifact Registry",
+    title="ECE 461 / Phase 2 Backend",
     version="1.0.0",
 )
 
+# Include routers
 app.include_router(routes_health.router)
 app.include_router(routes_artifacts.router)
 app.include_router(routes_model_extras.router)
@@ -22,8 +23,9 @@ app.include_router(routes_reset.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_tracks.router)
 
-
 @app.get("/")
 def root():
-    # simple root for Lighthouse
-    return {"message": "Artifact Registry running"}
+    return {"message": "backend online"}
+
+# Lambda entrypoint
+handler = Mangum(app)
