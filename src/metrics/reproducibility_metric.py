@@ -7,7 +7,7 @@ import sys
 import os
 from huggingface_hub import HfApi
 from src.metrics.base import MetricBase
-from log import setup_logging
+from ..log import setup_logging
 
 class ReproducibilityMetric(MetricBase):
     """

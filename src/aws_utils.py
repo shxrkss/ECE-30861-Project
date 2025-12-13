@@ -21,12 +21,11 @@ def upload_file_to_s3(file_path: str, s3_key: str) -> bool:
     """Upload a local file to S3 under the given key."""
     try:
         s3_client.upload_file(file_path, S3_BUCKET, s3_key)
-        logger.info(f"Uploaded {file_path} to s3://{S3_BUCKET}/{s3_key}")
         return True
-    except ClientError as e:
-        logger.error(f"S3 upload failed: {e}")
+    except Exception as e:
+        print(f"Error uploading to S3: {e}")
         return False
-    
+      
 def download_file_from_s3(s3_key: str, local_path: str) -> bool:
     """Download an S3 object to a local file path."""
     try:

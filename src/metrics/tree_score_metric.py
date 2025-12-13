@@ -2,7 +2,7 @@ import os
 import time
 import json
 import logging
-from metrics.base import MetricBase
+from .base import MetricBase
 from src.metrics.lineage import get_lineage  # <- assuming you put your helper there
 
 

@@ -3,15 +3,14 @@ name: CD - Deploy to AWS ECS Fargate
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # allows manual trigger from Actions tab
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -24,50 +23,54 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image
+      - name: Build and push Docker image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          TAG: ${{ github.sha }}
         run: |
-          echo "Building image..."
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "Building Docker image..."
+          docker build -t $REPOSITORY:$TAG .
+          docker tag $REPOSITORY:$TAG $REGISTRY/$REPOSITORY:$TAG
+          docker push $REGISTRY/$REPOSITORY:$TAG
 
-      - name: Download current ECS task definition
+      - name: Download current task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition model-registry-task \
-            --query taskDefinition > task-definition.json
+            --task-definition ${{ secrets.ECS_TASK_FAMILY }} \
+            --query taskDefinition > task.json
 
-      - name: Clean ECS task definition JSON
+      - name: Clean and normalize task definition
         run: |
-          echo "Cleaning unsupported fields (like enableFaultInjection)..."
-          cat task-definition.json | jq 'del(
-            .enableFaultInjection,
-            .registeredAt,
-            .registeredBy,
-            .compatibilities,
-            .requiresAttributes,
-            .requiresCompatibilities,
-            .revision,
-            .status
-          )' > clean-task-definition.json
-          mv clean-task-definition.json task-definition.json
+          echo "Cleaning unsupported ECS fields..."
+          cat task.json | jq '
+            del(
+              .revision,
+              .status,
+              .registeredAt,
+              .registeredBy,
+              .compatibilities,
+              .requiresAttributes
+            )
+            + {
+              family: "${{ secrets.ECS_TASK_FAMILY }}",
+              requiresCompatibilities: ["FARGATE"],
+              networkMode: "awsvpc"
+            }
+          ' > task-clean.json
 
-      - name: Fill in new image ID
-        id: task-def
+      - name: Inject new image into task definition
+        id: render-task
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
-          container-name: model-registry
+          task-definition: task-clean.json
+          container-name: ${{ secrets.ECS_CONTAINER_NAME }}
           image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-      - name: Deploy ECS service
+      - name: Deploy updated task definition to ECS service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ secrets.ECS_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
+          service: ${{ secrets.ECS_SERVICE }}
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
           wait-for-service-stability: true

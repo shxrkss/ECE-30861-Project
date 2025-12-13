@@ -7,7 +7,7 @@ import os
 from urllib.parse import urlparse
 from huggingface_hub import HfApi
 from src.metrics.base import MetricBase
-from log import setup_logging
+from ..log import setup_logging
 
 # Optional: GitHub token for higher API rate limits
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", None)
