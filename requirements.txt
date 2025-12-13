@@ -15,3 +15,4 @@ flake8
 hf_xet
 accelerate
 transformers
+mangum
