@@ -1,5 +1,4 @@
 # src/api/routes_model_extras.py
-from src.services.auth import require_role
 from fastapi import APIRouter, HTTPException, Path, Query, Header, Depends
 
 from src.models.artifacts import (
@@ -15,10 +14,6 @@ from src.services.lineage_engine import compute_lineage_graph
 from src.services.cost_engine import compute_artifact_cost
 
 router = APIRouter(tags=["model-extras"])
-
-@router.get("/enumerate", dependencies=[Depends(require_role("enumerate"))])
-def enumerate_route():
-    return enumerate_models()
 
 
 def require_auth(x_authorization: str = Header(..., alias="X-Authorization")):

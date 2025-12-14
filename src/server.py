@@ -22,7 +22,6 @@ app.include_router(routes_model_extras.router)
 app.include_router(routes_reset.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_tracks.router)
-app.include_router(routes_model_extras.router, prefix="/api")
 
 @app.get("/")
 def root():
