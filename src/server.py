@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from mangum import Mangum
 
-from api import (
+from src.api import (
     routes_health,
     routes_artifacts,
     routes_model_extras,

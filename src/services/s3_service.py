@@ -12,19 +12,12 @@ from datetime import datetime
 # Safe Lazy Initialization (prevents import failures in CI)
 # -------------------------------------------------------------------
 def get_bucket_name() -> str:
-    """
-    Returns the S3 bucket name. Fails only when the bucket is actually used.
-    Makes testing safe because importing this module doesn't blow up.
-    """
     bucket = os.getenv("AWS_BUCKET_NAME")
     if not bucket:
-        raise RuntimeError("AWS_BUCKET_NAME must be set in environment")
+        raise RuntimeError("AWS_BUCKET_NAME is not set")
     return bucket
 
 def get_s3_client():
-    """
-    Lazy S3 client creation – safe for local tests.
-    """
     return boto3.client("s3")
 
 # -------------------------------------------------------------------
