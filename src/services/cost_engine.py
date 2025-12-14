@@ -1,7 +1,7 @@
 # src/services/cost_engine.py
 from typing import Dict, Any
 from src.models.artifacts import ArtifactCost
-from src.services.s3_service import s3_client, get_bucket_name
+from src.services.s3_service import get_s3_client, get_bucket_name
 
 
 def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
@@ -9,6 +9,8 @@ def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
     Compute a fake but deterministic "size cost" based on URL length.
     No external services or S3 required.
     """
+    s3 = get_s3_client()
+    bucket = get_bucket_name()
     url_str = str(artifact.data.url) if artifact.data and artifact.data.url else ""
     base_cost = round(10.0 + (len(url_str) % 50), 1)  # between 10.0 and 59.9
 
@@ -22,10 +24,8 @@ def compute_artifact_cost(artifact, include_dependencies: bool) -> ArtifactCost:
     else:
         s3_key = key
 
-    bucket = get_bucket_name()
-
     # HEAD request to get object size
-    head = s3_client.head_object(Bucket=bucket, Key=s3_key)
+    head = s3.head_object(Bucket=bucket, Key=s3_key)
     size_bytes = head["ContentLength"]
     mb = round(size_bytes / (1024 * 1024), 1)
 
