@@ -46,14 +46,8 @@ def _register_failure(key: str):
     cnt += 1
     _attempts[key] = (cnt, first)
     if cnt >= _MAX_ATTEMPTS:
-    cnt, first = _attempts.get(key, (0, time.time()))
-    cnt += 1
-    _attempts[key] = (cnt, first)
-    if cnt >= _MAX_ATTEMPTS:
         _lockouts[key] = time.time() + _LOCKOUT_TTL
-        if key in _attempts:
-            del _attempts[key]
-
+        _attempts.pop(key, None)
 
 
 def _register_success(key: str):
@@ -78,7 +72,6 @@ def verify_api_key(key: str = Security(api_key_header)) -> Dict:
     if _is_locked(key):
         raise HTTPException(status_code=423, detail="API key locked; try later")
 
-    info = API_KEY_MAP.get(key)
     info = API_KEY_MAP.get(key)
     if not info:
         _register_failure(key)
