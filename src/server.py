@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from mangum import Mangum
 
-from api import (
+from src.api import (
     routes_health,
     routes_artifacts,
     routes_model_extras,
@@ -22,7 +22,6 @@ app.include_router(routes_model_extras.router)
 app.include_router(routes_reset.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_tracks.router)
-app.include_router(routes_model_extras.router, prefix="/api")
 
 @app.get("/")
 def root():

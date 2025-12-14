@@ -1,18 +1,18 @@
 fastapi
 uvicorn
 httpx
+requests
+python-dotenv
 boto3
 aws-xray-sdk
 numpy
 pandas
 PyGithub
-pytest
 huggingface_hub
-requests
-python-dotenv
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+transformers
+accelerate
+pytest
 pylint
 flake8
-hf_xet
-accelerate
-transformers
-mangum

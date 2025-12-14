@@ -45,4 +45,4 @@ jobs:
           echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
         
       - name: Run tests
-        run: pytest tests --disable-warnings -q
+        run: pytest tests --maxfail=1 --disable-warnings -q

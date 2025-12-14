@@ -12,19 +12,12 @@ from datetime import datetime
 # Safe Lazy Initialization (prevents import failures in CI)
 # -------------------------------------------------------------------
 def get_bucket_name() -> str:
-    """
-    Returns the S3 bucket name. Fails only when the bucket is actually used.
-    Makes testing safe because importing this module doesn't blow up.
-    """
     bucket = os.getenv("AWS_BUCKET_NAME")
     if not bucket:
-        raise RuntimeError("AWS_BUCKET_NAME must be set in environment")
+        raise RuntimeError("AWS_BUCKET_NAME is not set")
     return bucket
 
 def get_s3_client():
-    """
-    Lazy S3 client creation – safe for local tests.
-    """
     return boto3.client("s3")
 
 # -------------------------------------------------------------------
@@ -46,7 +39,6 @@ def upload_file_to_s3(local_path: str, key: str, checksum: str = None) -> bool:
         print(f"S3 upload error → {e}")
         raise
 
-
 def get_s3_object_checksum(key: str) -> Optional[str]:
     bucket = get_bucket_name()
     s3 = get_s3_client()
@@ -61,28 +53,23 @@ def get_s3_object_checksum(key: str) -> Optional[str]:
     except ClientError:
         return None
 
-
 def generate_presigned_download_url(key: str, expires_in: int = 300) -> Optional[str]:
     bucket = get_bucket_name()
     s3 = get_s3_client()
     try:
         return s3.generate_presigned_url(
             "get_object",
-            Params={"Bucket": bucket, "Key": key},
+            Params={"Bucket": S3_BUCKET, "Key": key},
             ExpiresIn=expires_in,
         )
     except ClientError:
         return None
 
-
-# -------------------------------------------------------------------
-# Manifest handling
-# -------------------------------------------------------------------
-
+# -- Manifest support ----------------------------------------------------------------
 def _manifest_key_for_model_key(model_key: str) -> str:
+    # e.g. models/xyz.zip -> models/xyz/manifest.json
     base = model_key[:-4] if model_key.endswith(".zip") else model_key
     return f"{base}/manifest.json"
-
 
 def write_manifest(model_key: str, manifest: Dict) -> bool:
     bucket = get_bucket_name()
@@ -101,7 +88,6 @@ def write_manifest(model_key: str, manifest: Dict) -> bool:
         print(f"Error writing manifest: {e}")
         raise
 
-
 def read_manifest(model_key: str) -> Optional[Dict]:
     bucket = get_bucket_name()
     s3 = get_s3_client()
@@ -113,11 +99,7 @@ def read_manifest(model_key: str) -> Optional[Dict]:
     except ClientError:
         return None
 
-
-# -------------------------------------------------------------------
-# Listing / Searching
-# -------------------------------------------------------------------
-
+# The previous listing & search functions (unchanged)
 def list_s3_models(prefix: str = "models/") -> List[Dict]:
     bucket = get_bucket_name()
     s3 = get_s3_client()
@@ -136,7 +118,6 @@ def list_s3_models(prefix: str = "models/") -> List[Dict]:
                 })
     return results
 
-
 def get_model_card_text(model_key: str) -> str:
     bucket = get_bucket_name()
     s3 = get_s3_client()
@@ -153,7 +134,6 @@ def get_model_card_text(model_key: str) -> str:
                 raise
     return ""
 
-
 def search_models_by_card(all_models: List[Dict], regex: str) -> List[Dict]:
     import re as _re
     pattern = _re.compile(regex, _re.IGNORECASE)
@@ -167,7 +147,6 @@ def search_models_by_card(all_models: List[Dict], regex: str) -> List[Dict]:
             continue
     return matched
 
-
 def delete_prefix(prefix: str = "models/") -> int:
     bucket = get_bucket_name()
     s3 = get_s3_client()
@@ -175,6 +154,7 @@ def delete_prefix(prefix: str = "models/") -> int:
     pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
     to_delete = []
+
     for page in pages:
         for obj in page.get("Contents", []):
             to_delete.append({"Key": obj["Key"]})
@@ -182,6 +162,7 @@ def delete_prefix(prefix: str = "models/") -> int:
     if not to_delete:
         return 0
 
+    # S3 delete_objects supports up to 1000 keys per call
     deleted_count = 0
     for i in range(0, len(to_delete), 1000):
         chunk = to_delete[i:i + 1000]
