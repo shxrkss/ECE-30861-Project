@@ -9,6 +9,6 @@ COPY src/ src/
 COPY index.html /app/index.html
 COPY styles.css /app/styles.css
 
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "80"]

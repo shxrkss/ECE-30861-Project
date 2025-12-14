@@ -174,6 +174,10 @@ def search_by_regex(regex: ArtifactRegEx) -> List[ArtifactMetadata]:
     return sorted(results, key=lambda m: (m.name, m.id))
 
 
-def reset_store() -> None:
-    """Clear all artifacts."""
-    _ARTIFACTS.clear()
+def reset_store():
+    global _ARTIFACTS
+    _ARTIFACTS = {
+        "model": {},
+        "dataset": {},
+        "code": {}
+    }
