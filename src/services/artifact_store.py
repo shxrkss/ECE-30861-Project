@@ -131,12 +131,14 @@ def list_artifacts(
 
     def matches(art: Artifact) -> bool:
         for q in queries:
-            if q.name != "*" and art.metadata.name != q.name:
-                continue
-            if q.types is not None and art.metadata.type not in q.types:
-                continue
-            return True
+            name_ok = (q.name == "*" or art.metadata.name == q.name)
+            type_ok = (q.types is None or art.metadata.type in q.types)
+
+            if name_ok and type_ok:
+                return True
+
         return False
+
 
     all_recs = _sorted_records()
     filtered: List[ArtifactMetadata] = [
