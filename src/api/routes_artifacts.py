@@ -98,10 +98,10 @@ def artifact_delete_route(
 
 
 @router.post("/artifacts", response_model=List[ArtifactMetadata])
-def artifacts_list_route(
+def artifacts_list(
     queries: List[ArtifactQuery],
-    response: Response,
-    offset: Optional[str] = Query(None),
+    offset: Optional[str] = None,
+    response: Response = None,
     _token: str = Depends(require_auth),
 ):
     if not isinstance(queries, list) or len(queries) == 0:
@@ -109,12 +109,19 @@ def artifacts_list_route(
             status_code=400,
             detail="artifact_query must be an array with at least one entry",
         )
+
     for q in queries:
         if not q.name:
-            raise HTTPException(status_code=400, detail="Query missing required name field")
+            raise HTTPException(
+                status_code=400,
+                detail="Query missing required name field",
+            )
 
     page, next_offset = list_artifacts(queries, offset)
-    response.headers["offset"] = next_offset
+
+    if response is not None:
+        response.headers["offset"] = next_offset
+
     return page
 
 
