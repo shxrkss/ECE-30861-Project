@@ -30,8 +30,6 @@ from src.services.artifact_store import (
 )
 
 router = APIRouter(tags=["artifacts"])
-import src.services.artifact_store as store
-print("ARTIFACT STORE ID:", id(store._ARTIFACTS))
 def require_auth(x_authorization: str = Header(..., alias="X-Authorization")):
     """
     In 'no auth' mode we just require the header to exist and ignore it.

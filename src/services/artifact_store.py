@@ -127,7 +127,11 @@ def list_artifacts(
     Offset is a string index into the filtered list.
     """
     if not queries:
-        return [], ""
+    # No filters = return ALL artifacts
+        filtered = [rec.artifact.metadata for rec in _sorted_records()]
+        return filtered[:page_size], (
+            str(page_size) if len(filtered) > page_size else ""
+        )
 
     def matches(art: Artifact) -> bool:
         for q in queries:
