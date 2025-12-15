@@ -46,7 +46,6 @@
 from fastapi import APIRouter #, Header, Depends, HTTPException
 from src.services.artifact_store import reset_store
 #from src.services.rate_limit import reset_rate_limit_state
-from services.artifact_store import reset_store
 
 router = APIRouter(tags=["admin"])
 
