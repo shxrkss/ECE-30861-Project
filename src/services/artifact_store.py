@@ -67,6 +67,7 @@ def find_existing_artifact(artifact_type: ArtifactType, url: str) -> Optional[Ar
 
 def create_artifact(artifact_type: ArtifactType, data: ArtifactData) -> Artifact:
     """Create and store a new artifact."""
+    print("RESET STORE ID:", id(_ARTIFACTS))
     name = _infer_name_from_url(str(data.url))
     art_id = _new_id()
     metadata = ArtifactMetadata(name=name, id=art_id, type=artifact_type)
@@ -175,4 +176,5 @@ def search_by_regex(regex: ArtifactRegEx) -> List[ArtifactMetadata]:
 
 
 def reset_store():
+    print("CREATE STORE ID:", id(_ARTIFACTS))
     _ARTIFACTS.clear()
